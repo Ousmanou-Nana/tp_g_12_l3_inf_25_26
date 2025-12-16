@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.admin.home.HomeAdminFragment">
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Logo -->
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@mipmap/ic_launcher"
+                android:contentDescription="@string/logo"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Bouton Ajouter un objet -->
+            <Button
+                android:id="@+id/buttonAddObject"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:text="Ajouter un objet"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Bouton Liste des déclarations -->
+            <Button
+                android:id="@+id/buttonListDeclarations"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:text="Liste des déclarations"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Bouton Liste des objets perdus -->
+            <Button
+                android:id="@+id/buttonlistObject"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:text="Liste des objets"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+
+</FrameLayout>

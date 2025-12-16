@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">TP-G-12-L3-INF-25-26</string>
+    <string name="wellcome_msg">WELLCOME</string>
+    <string name="user_btn_msg">USER</string>
+    <string name="admin_btn_msg">ADMIN</string>
+    <string name="logo">logo</string>
+    <string name="wellcome_user">Bienvenue ! Que voulez-vous faire ?</string>
+    <string name="buttonDeclare_msg">Déclarer un objet perdu</string>
+    <string name="buttonLostList_msg">Liste des objets perdus</string>
+    <string name="buttonMyDeclarations">Vos déclarations</string>
+
+
+    <string name="hint_name">Nom complet</string>
+    <string name="hint_phone">Numéro de téléphone</string>
+    <string name="hint_matricule">Matricule</string>
+    <string name="hint_description">Description de l’objet</string>
+
+    <string name="button_add_images">Ajouter des images</string>
+    <string name="button_submit">Valider</string>
+
+
+</resources>
