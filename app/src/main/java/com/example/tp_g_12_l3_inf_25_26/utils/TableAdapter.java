@@ -1,18 +1,23 @@
 package com.example.tp_g_12_l3_inf_25_26.utils;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.tp_g_12_l3_inf_25_26.R;
+
 import java.util.List;
 
-public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class TableAdapter<T extends TableRow>
+        extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_ROW = 1;
@@ -29,7 +34,12 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
         void onRowClick(T row);
     }
 
-    public TableAdapter(Context context, List<ColumnDef> columns, List<T> data, OnRowClickListener<T> rowClickListener) {
+    public TableAdapter(
+            Context context,
+            List<ColumnDef> columns,
+            List<T> data,
+            OnRowClickListener<T> rowClickListener
+    ) {
         this.context = context;
         this.columns = columns;
         this.data = data;
@@ -48,16 +58,26 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
 
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(
+            @NonNull ViewGroup parent,
+            int viewType
+    ) {
         LayoutInflater inflater = LayoutInflater.from(context);
         if (viewType == TYPE_HEADER) {
-            return new HeaderHolder(inflater.inflate(R.layout.item_table_header, parent, false));
+            return new HeaderHolder(
+                    inflater.inflate(R.layout.item_table_header, parent, false)
+            );
         }
-        return new RowHolder(inflater.inflate(R.layout.item_table_row, parent, false));
+        return new RowHolder(
+                inflater.inflate(R.layout.item_table_row, parent, false)
+        );
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(
+            @NonNull RecyclerView.ViewHolder holder,
+            int position
+    ) {
         if (holder.getItemViewType() == TYPE_HEADER) {
             ((HeaderHolder) holder).bind();
         } else {
@@ -66,7 +86,9 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
     }
 
     class HeaderHolder extends RecyclerView.ViewHolder {
+
         LinearLayout container;
+
         HeaderHolder(View v) {
             super(v);
             container = v.findViewById(R.id.headerContainer);
@@ -87,7 +109,9 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
     }
 
     class RowHolder extends RecyclerView.ViewHolder {
+
         LinearLayout container;
+
         RowHolder(View v) {
             super(v);
             container = v.findViewById(R.id.rowContainer);
@@ -95,35 +119,67 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
 
         void bind(T row) {
             container.removeAllViews();
+
             List<String> cells = row.cells();
-            for (int i = 0; i < cells.size(); i++) {
-                ColumnDef col = columns.get(i);
-                container.addView(buildCell(cells.get(i), col.weight, false));
+            int visibleCount = columns.size();
+
+            String bgColor = null;
+            if (cells.size() > visibleCount) {
+                bgColor = cells.get(cells.size() - 1);
             }
+
+            for (int i = 0; i < visibleCount; i++) {
+                ColumnDef col = columns.get(i);
+                container.addView(
+                        buildCell(cells.get(i), col.weight, false)
+                );
+            }
+
+            if (bgColor != null) {
+                try {
+                    container.setBackgroundColor(Color.parseColor(bgColor));
+                } catch (Exception ignored) {}
+            }
+
             container.setOnClickListener(v -> {
-                if (rowClickListener != null) rowClickListener.onRowClick(row);
+                if (rowClickListener != null) {
+                    rowClickListener.onRowClick(row);
+                }
             });
         }
     }
 
     private TextView buildCell(String text, int weight, boolean bold) {
         TextView tv = new TextView(context);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, weight));
+        tv.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        weight
+                )
+        );
         tv.setText(text);
         tv.setPadding(8, 8, 8, 8);
-        if (bold) tv.setTypeface(null, Typeface.BOLD);
+        if (bold) {
+            tv.setTypeface(null, Typeface.BOLD);
+        }
         return tv;
     }
 
     private void sortBy(int index) {
-        if (sortIndex == index) asc = !asc;
-        else { sortIndex = index; asc = true; }
+        if (sortIndex == index) {
+            asc = !asc;
+        } else {
+            sortIndex = index;
+            asc = true;
+        }
 
         data.sort((a, b) -> {
             String va = a.cells().get(index);
             String vb = b.cells().get(index);
             return asc ? va.compareTo(vb) : vb.compareTo(va);
         });
+
         notifyDataSetChanged();
     }
 }

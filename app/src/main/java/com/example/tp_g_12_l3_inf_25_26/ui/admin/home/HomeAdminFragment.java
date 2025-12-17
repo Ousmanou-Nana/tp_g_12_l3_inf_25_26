@@ -15,6 +15,7 @@ import android.widget.Button;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
 import com.example.tp_g_12_l3_inf_25_26.ui.admin.addobject.AddObjectFragment;
+import com.example.tp_g_12_l3_inf_25_26.ui.admin.listdeclaration.ListDeclarationFragment;
 
 public class HomeAdminFragment extends Fragment {
 
@@ -42,14 +43,14 @@ public class HomeAdminFragment extends Fragment {
                     .commit();
         });
 
-//        Button buttonListDeclarations = view.findViewById(R.id.buttonListDeclarations);
-//        buttonListDeclarations.setOnClickListener(v -> {
-//            getParentFragmentManager().beginTransaction()
-//                    .replace(R.id.main_admin_container, ListDeclarationFragment.newInstance())
-//                    .addToBackStack(null)
-//                    .commit();
-//        });
-//
+        Button buttonListDeclarations = view.findViewById(R.id.buttonListDeclarations);
+        buttonListDeclarations.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.main_admin_container, ListDeclarationFragment.newInstance())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
 //        Button buttonListObject = view.findViewById(R.id.buttonlistObject);
 //        buttonListObject.setOnClickListener(v -> {
 //            getParentFragmentManager().beginTransaction()
