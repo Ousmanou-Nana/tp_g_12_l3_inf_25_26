@@ -1,4 +1,4 @@
-package com.example.tp_g_12_l3_inf_25_26.ui.admin.listdeclaration;
+package com.example.tp_g_12_l3_inf_25_26.ui.admin.listobject;
 
 import androidx.lifecycle.ViewModelProvider;
 
@@ -25,18 +25,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ListDeclarationFragment extends Fragment {
+public class ListObjectFragment extends Fragment {
 
-    private ListDeclarationViewModel mViewModel;
+    private ListObjectViewModel mViewModel;
 
-    public static ListDeclarationFragment newInstance() {
-        return new ListDeclarationFragment();
+    public static ListObjectFragment newInstance() {
+        return new ListObjectFragment();
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_list_declaration, container, false);
+        return inflater.inflate(R.layout.fragment_list_object, container, false);
     }
 
     @Override
@@ -44,22 +44,20 @@ public class ListDeclarationFragment extends Fragment {
         RecyclerView recycler = view.findViewById(R.id.table);
         recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        mViewModel = new ViewModelProvider(this).get(ListDeclarationViewModel.class);
 
+        mViewModel = new ViewModelProvider(this).get(ListObjectViewModel.class);
 
 
         List<ColumnDef> columns = new ArrayList<>();
         columns.add(new ColumnDef("N°", 1, true));
-        columns.add(new ColumnDef("Nom", 2, true));
-        columns.add(new ColumnDef("téléphone", 2, false));
-        columns.add(new ColumnDef("Matricule", 2, true));
         columns.add(new ColumnDef("Type", 2, true));
         columns.add(new ColumnDef("Description", 3, false));
 
         List<TableRow> rows = new ArrayList<>();
-        rows.add(() -> Arrays.asList("001","othman","699999999","99Z999FS", "Téléphone", "Perdu au bureau","red"));
-        rows.add(() -> Arrays.asList("002", "othman","699999999","99Z999FS","Clé", "Perdu dans le jardin","red"));
-        rows.add(() -> Arrays.asList("003","othman","699999999","99Z999FS", "Sac", "Perdu au marché","yellow"));
+        rows.add(() -> Arrays.asList("001", "Téléphone", "Perdu au bureau"));
+        rows.add(() -> Arrays.asList("002", "Clé", "Perdu dans le jardin"));
+        rows.add(() -> Arrays.asList("003", "Sac", "Perdu au marché"));
+
         TableAdapter<TableRow> adapter = new TableAdapter<>(
                 requireContext(),
                 columns,
