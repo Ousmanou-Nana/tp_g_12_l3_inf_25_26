@@ -89,6 +89,8 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
                 container.addView(tv);
             }
         }
+
+
     }
 
     class RowHolder extends RecyclerView.ViewHolder {
@@ -100,6 +102,7 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
         }
 
         void bind(T row, int position) {
+
             container.removeAllViews();
             List<String> cells = row.cells();
 
@@ -108,14 +111,55 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
                 container.addView(buildCell(cells.get(i), col.weight, false));
             }
 
-            // Ligne alternée
-            int bgColor = position % 2 == 0 ? 0xFFF5F5F5 : 0xFFFFFFFF;
-            container.setBackgroundColor(bgColor);
+            String status = cells.get(cells.size() - 1);
+
+            int backgroundColor = resolveStatusColor(status, position);
+            container.setBackgroundColor(backgroundColor);
 
             container.setOnClickListener(v -> {
-                if (rowClickListener != null) rowClickListener.onRowClick(row);
+                if (rowClickListener != null) {
+                    rowClickListener.onRowClick(row);
+                }
             });
         }
+
+        private int resolveStatusColor(String status, int position) {
+
+            if ("red".equals(status)) {
+                return alternateRed(position);
+            }
+
+            if ("yellow".equals(status)) {
+                return alternateYellow(position);
+            }
+
+            if ("green".equals(status)) {
+                return alternateGreen(position);
+            }
+
+            return 0xFFFFFFFF;
+
+
+        }
+
+        private int alternateRed(int position) {
+            int strong = 0xFFFFCDD2;
+            int light = 0xFFFFEBEE;
+            return position % 2 == 0 ? strong : light;
+        }
+
+        private int alternateYellow(int position) {
+            int strong = 0xFFFFF9C4;
+            int light = 0xFFFFFDE7;
+            return position % 2 == 0 ? strong : light;
+        }
+
+        private int alternateGreen(int position) {
+            int strong = 0xFFC8E6C9;
+            int light = 0xFFE8F5E9;
+            return position % 2 == 0 ? strong : light;
+        }
+
     }
 
     private TextView buildCell(String text, int weight, boolean bold) {

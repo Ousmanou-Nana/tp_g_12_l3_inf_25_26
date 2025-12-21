@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.admin.addobject.AddObjectFragment">
 
+    <!-- Conteneur principal du formulaire -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Logo -->
         <ImageView
             android:id="@+id/logoDeclare"
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
-            android:contentDescription="@string/logo"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/logo" />
 
+        <!-- Nom -->
         <EditText
             android:id="@+id/editName"
             android:layout_width="match_parent"
@@ -27,6 +31,7 @@
             android:inputType="textPersonName"
             android:layout_marginBottom="16dp" />
 
+        <!-- Téléphone -->
         <EditText
             android:id="@+id/editPhone"
             android:layout_width="match_parent"
@@ -35,12 +40,14 @@
             android:inputType="phone"
             android:layout_marginBottom="16dp" />
 
+        <!-- Type d’objet -->
         <Spinner
             android:id="@+id/spinnerObjectType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
+        <!-- Description -->
         <EditText
             android:id="@+id/editDescription"
             android:layout_width="match_parent"
@@ -50,14 +57,16 @@
             android:gravity="top"
             android:layout_marginBottom="16dp" />
 
-        <ImageView
-            android:id="@+id/imagePreview"
+        <!-- Aperçu image -->
+        <LinearLayout
+            android:id="@+id/imagesContainer"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"/>
 
+
+        <!-- Prendre photo -->
         <Button
             android:id="@+id/buttonTakePhoto"
             android:layout_width="match_parent"
@@ -65,6 +74,7 @@
             android:text="Prendre une photo"
             android:layout_marginBottom="16dp" />
 
+        <!-- Enregistrer -->
         <Button
             android:id="@+id/buttonSubmit"
             android:layout_width="match_parent"
@@ -72,5 +82,4 @@
             android:text="Enregistrer" />
 
     </LinearLayout>
-
 </FrameLayout>

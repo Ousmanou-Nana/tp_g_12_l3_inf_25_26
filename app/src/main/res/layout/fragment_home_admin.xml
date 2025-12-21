@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.admin.home.HomeAdminFragment">
-
 
     <ScrollView
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
             android:orientation="vertical"
             android:gravity="center_horizontal">
 
-            <!-- Logo -->
+            <!-- Logo application -->
             <ImageView
                 android:id="@+id/logo"
                 android:layout_width="120dp"
@@ -26,7 +26,7 @@
                 android:contentDescription="@string/logo"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Bouton Ajouter un objet -->
+            <!-- Ajouter un objet -->
             <Button
                 android:id="@+id/buttonAddObject"
                 android:layout_width="match_parent"
@@ -34,7 +34,7 @@
                 android:text="Ajouter un objet"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Bouton Liste des déclarations -->
+            <!-- Liste des déclarations -->
             <Button
                 android:id="@+id/buttonListDeclarations"
                 android:layout_width="match_parent"
@@ -42,7 +42,7 @@
                 android:text="Liste des déclarations"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Bouton Liste des objets perdus -->
+            <!-- Liste des objets -->
             <Button
                 android:id="@+id/buttonlistObject"
                 android:layout_width="match_parent"
@@ -52,6 +52,4 @@
 
         </LinearLayout>
     </ScrollView>
-
-
 </FrameLayout>

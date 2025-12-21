@@ -36,29 +36,18 @@ public class HomeAdminFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mViewModel = new ViewModelProvider(this).get(HomeAdminViewModel.class);
 
-        Button buttonAddObject = view.findViewById(R.id.buttonAddObject);
-        buttonAddObject.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.main_admin_container, AddObjectFragment.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
+        view.findViewById(R.id.buttonAddObject).setOnClickListener(v ->open(AddObjectFragment.newInstance()));
+        view.findViewById(R.id.buttonListDeclarations).setOnClickListener(v -> open(ListDeclarationFragment.newInstance()));
+        view.findViewById(R.id.buttonlistObject).setOnClickListener(v -> open(ListObjectFragment.newInstance()));
 
-        Button buttonListDeclarations = view.findViewById(R.id.buttonListDeclarations);
-        buttonListDeclarations.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.main_admin_container, ListDeclarationFragment.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
 
-        Button buttonListObject = view.findViewById(R.id.buttonlistObject);
-        buttonListObject.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.main_admin_container, ListObjectFragment.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
+    }
+    private void open(Fragment fragment) {
+        getParentFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_admin_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }
 
