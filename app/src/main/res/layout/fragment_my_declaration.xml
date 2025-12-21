@@ -23,14 +23,14 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Faites Nouvelles Déclarations"/>
+            android:text="@string/declare_object"/>
 
         <Button
             android:id="@+id/buttonLostList"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="La Liste des Objets Perdus"/>
+            android:text="@string/lost_objects_list"/>
     </LinearLayout>
 
 

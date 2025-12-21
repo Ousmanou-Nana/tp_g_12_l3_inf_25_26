@@ -1,18 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/user_declare_object_from"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.user.declareobjectfrom.UserDeclareObjectFrom">
-
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        >
+        android:padding="24dp">
 
         <ImageView
             android:id="@+id/logoDeclare"
@@ -21,37 +12,36 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
             android:contentDescription="@string/logo"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@mipmap/ic_launcher"/>
 
         <EditText
             android:id="@+id/editName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_name"
+            android:hint="@string/hint_full_name"
             android:inputType="textPersonName"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"/>
 
         <EditText
             android:id="@+id/editPhone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_phone"
+            android:hint="@string/hint_phone_number"
             android:inputType="phone"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"/>
 
         <EditText
             android:id="@+id/editMatricule"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_matricule"
-            android:inputType="text"
-            android:layout_marginBottom="16dp" />
+            android:hint="@string/hint_registration_number"
+            android:layout_marginBottom="16dp"/>
 
         <Spinner
             android:id="@+id/spinnerObjectType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"/>
 
         <EditText
             android:id="@+id/editDescription"
@@ -60,30 +50,30 @@
             android:hint="@string/hint_description"
             android:inputType="textMultiLine"
             android:gravity="top"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"/>
 
-        <ImageView
-            android:id="@+id/imagePreview"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/buttonAddImages"
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/button_add_images"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:id="@+id/containerImages"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+
+        </HorizontalScrollView>
+
+
+
 
         <Button
             android:id="@+id/buttonSubmit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/button_submit" />
+            android:text="@string/button_save"/>
 
     </LinearLayout>
 
-
-</FrameLayout>
+</ScrollView>

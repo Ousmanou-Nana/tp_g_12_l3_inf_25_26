@@ -18,9 +18,5 @@ public class MainUserActivity extends AppCompatActivity {
                     .replace(R.id.main_user_container, HomeUserFragment.newInstance())
                     .commitNow();
         }
-
-
-
-
     }
 }

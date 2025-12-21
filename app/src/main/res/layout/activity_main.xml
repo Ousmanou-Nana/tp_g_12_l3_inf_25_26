@@ -1,59 +1,57 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:background="@color/white"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
+    android:background="@color/white">
     <ImageView
         android:id="@+id/logo_img"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:layout_marginTop="40dp"
         android:contentDescription="@string/logo"
-        app:srcCompat="@drawable/ic_launcher_background"
+        android:src="@mipmap/ic_launcher"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
-        android:id="@+id/wellcomeMsg"
+        android:id="@+id/welcomeMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/wellcome_msg"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/welcome_message"
+        android:textSize="18sp"
         android:textColor="@color/black"
         app:layout_constraintTop_toBottomOf="@id/logo_img"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <Button
         android:id="@+id/buttonAdmin"
-        android:layout_width="300dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="100dp"
-        android:backgroundTint="@color/black"
-        android:text="@string/admin_btn_msg"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="64dp"
+        android:text="@string/admin_button"
         android:textColor="@color/white"
-        app:layout_constraintTop_toBottomOf="@id/wellcomeMsg"
+        android:backgroundTint="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/welcomeMessage"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.8"/>
 
     <Button
         android:id="@+id/buttonUser"
-        android:layout_width="300dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="30dp"
-        android:backgroundTint="@color/black"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/user_button"
         android:textColor="@color/white"
-        android:text="@string/user_btn_msg"
+        android:backgroundTint="@color/black"
         app:layout_constraintTop_toBottomOf="@id/buttonAdmin"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.8"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,7 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.tp_g_12_l3_inf_25_26.R;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.mydeclaration.MyDeclaration;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.declareobjectfrom.UserDeclareObjectFrom;
-import com.example.tp_g_12_l3_inf_25_26.ui.user.LostList.UserLostList;
+import com.example.tp_g_12_l3_inf_25_26.ui.user.lostlist.UserLostList;
 
 public class HomeUserFragment extends Fragment {
     private HomeUserViewModel mViewModel;
@@ -42,34 +41,24 @@ public class HomeUserFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        mViewModel = new ViewModelProvider(this).get(HomeUserViewModel.class);
 
-        Button buttonDeclare = view.findViewById(R.id.buttonDeclare);
-        Button buttonLostList = view.findViewById(R.id.buttonLostList);
-        Button buttonMyDeclarations = view.findViewById(R.id.buttonMyDeclarations);
+        view.findViewById(R.id.buttonDeclare)
+                .setOnClickListener(v -> open(UserDeclareObjectFrom.newInstance()));
 
-        buttonDeclare.setOnClickListener(v -> {
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.main_user_container, UserDeclareObjectFrom.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
+        view.findViewById(R.id.buttonLostList)
+                .setOnClickListener(v -> open(UserLostList.newInstance()));
 
-        buttonLostList.setOnClickListener(v -> {
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.main_user_container, UserLostList.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
-
-        buttonMyDeclarations.setOnClickListener(v -> {
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.main_user_container, MyDeclaration.newInstance())
-                    .addToBackStack(null)
-                    .commit();
-        });
+        view.findViewById(R.id.buttonMyDeclarations)
+                .setOnClickListener(v -> open(MyDeclaration.newInstance()));
     }
 
+    private void open(Fragment fragment) {
+        getParentFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_user_container, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
 }
