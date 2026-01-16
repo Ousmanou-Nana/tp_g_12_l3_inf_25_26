@@ -18,7 +18,9 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
+import com.example.tp_g_12_l3_inf_25_26.models.Declaration;
 import com.example.tp_g_12_l3_inf_25_26.models.Objet;
+import com.example.tp_g_12_l3_inf_25_26.ui.admin.matching.MatchingDialog;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 
@@ -55,7 +57,6 @@ public class ListObjectFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        // Si vous avez des boutons de filtrage dans votre layout
         btnAll = view.findViewById(R.id.btnAll);
         btnPending = view.findViewById(R.id.btnPending);
         btnVerification = view.findViewById(R.id.btnVerification);
@@ -115,14 +116,12 @@ public class ListObjectFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        // Observer les lignes du tableau
         mViewModel.getRowsLiveData().observe(getViewLifecycleOwner(), rows -> {
             if (rows != null) {
                 adapter.updateData(rows);
             }
         });
 
-        // Observer les résultats des actions
         mViewModel.getActionResult().observe(getViewLifecycleOwner(), result -> {
             if (result != null) {
                 Toast.makeText(requireContext(), result, Toast.LENGTH_LONG).show();
@@ -131,7 +130,6 @@ public class ListObjectFragment extends Fragment {
     }
 
     private void showActionDialog(TableRow row) {
-        // Récupérer l'ID de l'objet (première colonne)
         List<String> data = row.getData();
         if (data == null || data.isEmpty()) return;
 
@@ -149,15 +147,13 @@ public class ListObjectFragment extends Fragment {
             return;
         }
 
-        // Créer le message avec les détails
         String message = buildDetailMessage(objet);
 
-        // Afficher le dialogue avec les options
         new AlertDialog.Builder(requireContext())
                 .setTitle("Détails de l'objet")
                 .setMessage(message)
                 .setPositiveButton("Mettre en vérification", (dialog, which) -> {
-                    mViewModel.updateObjetStatut(objetId, "En cours de vérification");
+                    showMatchingDeclarationsDialog(objet);
                 })
                 .setNeutralButton("Marquer récupéré", (dialog, which) -> {
                     mViewModel.updateObjetStatut(objetId, "Récupéré");
@@ -166,6 +162,58 @@ public class ListObjectFragment extends Fragment {
                     confirmDelete(objetId);
                 })
                 .show();
+    }
+
+    private void showMatchingDeclarationsDialog(Objet objet) {
+        // Load potential matching declarations
+        mViewModel.loadPotentialMatchingDeclarations(objet.getIdType(), objet.getIdObjet());
+
+        mViewModel.getPotentialMatchesLiveData().observe(getViewLifecycleOwner(), declarations -> {
+            if (declarations == null || declarations.isEmpty()) {
+                // No matches found, just update status
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Aucune déclaration correspondante")
+                        .setMessage("Aucune déclaration de même type. Voulez-vous quand même mettre en vérification ?")
+                        .setPositiveButton("Oui", (d, w) -> {
+                            mViewModel.updateObjetStatut(objet.getIdObjet(), "En cours de vérification");
+                        })
+                        .setNegativeButton("Non", null)
+                        .show();
+                return;
+            }
+
+            // Show matching dialog
+            MatchingDialog.showMatchingDeclarationsForObjet(
+                    requireContext(),
+                    objet,
+                    declarations,
+                    new MatchingDialog.OnMatchSelectedListener() {
+                        @Override
+                        public void onDeclarationSelected(Declaration declaration) {
+                            // Link object with declaration
+                            mViewModel.createMatching(
+                                    declaration.getIdDeclaration(),
+                                    objet.getIdObjet()
+                            );
+                            mViewModel.updateObjetStatut(objet.getIdObjet(), "En cours de vérification");
+                            Toast.makeText(requireContext(),
+                                    "Objet lié à la déclaration N°" + declaration.getIdDeclaration(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+
+                        @Override
+                        public void onObjetSelected(Objet o) {
+                            // Not used here
+                        }
+
+                        @Override
+                        public void onNoMatch() {
+                            // Just update status without linking
+                            mViewModel.updateObjetStatut(objet.getIdObjet(), "En cours de vérification");
+                        }
+                    }
+            );
+        });
     }
 
     private String buildDetailMessage(Objet objet) {

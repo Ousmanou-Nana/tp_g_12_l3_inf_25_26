@@ -9,20 +9,28 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.tp_g_12_l3_inf_25_26.DB.DatabaseHelper;
+import com.example.tp_g_12_l3_inf_25_26.models.Declaration;
 import com.example.tp_g_12_l3_inf_25_26.models.Objet;
 import com.example.tp_g_12_l3_inf_25_26.utils.ColumnDef;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ListObjectViewModel extends AndroidViewModel {
 
     private final DatabaseHelper databaseHelper;
     private final MutableLiveData<List<TableRow>> rowsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Objet>> objetsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Declaration>> potentialMatchesLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> actionResult = new MutableLiveData<>();
+
+    // Store current admin ID (should be set from login)
+    private int currentAdminId = 1; // Default, should be set properly
 
     public ListObjectViewModel(@NonNull Application application) {
         super(application);
@@ -30,7 +38,6 @@ public class ListObjectViewModel extends AndroidViewModel {
         loadObjets();
     }
 
-    // Colonnes du tableau
     public List<ColumnDef> getColumns() {
         List<ColumnDef> columns = new ArrayList<>();
         columns.add(new ColumnDef("N°", 1, true));
@@ -49,11 +56,18 @@ public class ListObjectViewModel extends AndroidViewModel {
         return objetsLiveData;
     }
 
+    public LiveData<List<Declaration>> getPotentialMatchesLiveData() {
+        return potentialMatchesLiveData;
+    }
+
     public LiveData<String> getActionResult() {
         return actionResult;
     }
 
-    // Charger tous les objets
+    public void setCurrentAdminId(int adminId) {
+        this.currentAdminId = adminId;
+    }
+
     public void loadObjets() {
         new Thread(() -> {
             List<Objet> objets = new ArrayList<>();
@@ -88,7 +102,6 @@ public class ListObjectViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Charger les objets par statut
     public void loadObjetsByStatut(String statut) {
         new Thread(() -> {
             List<Objet> objets = new ArrayList<>();
@@ -123,7 +136,46 @@ public class ListObjectViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Convertir un Cursor en Objet
+    // Load potential matching declarations for an object
+    public void loadPotentialMatchingDeclarations(int typeId, int objetId) {
+        new Thread(() -> {
+            List<Declaration> declarations = new ArrayList<>();
+
+            Cursor cursor = databaseHelper.getPotentialMatchingDeclarations(typeId, objetId);
+
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    Declaration declaration = cursorToDeclaration(cursor);
+                    declarations.add(declaration);
+                }
+                cursor.close();
+            }
+
+            potentialMatchesLiveData.postValue(declarations);
+        }).start();
+    }
+
+    // Create a matching between declaration and object
+    public void createMatching(int declarationId, int objetId) {
+        new Thread(() -> {
+            String currentDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(new Date());
+
+            long result = databaseHelper.createMatching(
+                    declarationId,
+                    objetId,
+                    currentAdminId,
+                    currentDate
+            );
+
+            if (result != -1) {
+                actionResult.postValue("Correspondance créée avec succès");
+            } else {
+                actionResult.postValue("Erreur lors de la création de la correspondance");
+            }
+        }).start();
+    }
+
     private Objet cursorToObjet(Cursor cursor) {
         Objet objet = new Objet();
 
@@ -147,7 +199,6 @@ public class ListObjectViewModel extends AndroidViewModel {
         if (statutIndex != -1) objet.setStatut(cursor.getString(statutIndex));
         if (adminIdIndex != -1) objet.setIdAdmin(cursor.getInt(adminIdIndex));
 
-        // Charger les images
         Cursor imageCursor = databaseHelper.getImagesByObjet(objet.getIdObjet());
         if (imageCursor != null) {
             while (imageCursor.moveToNext()) {
@@ -162,7 +213,47 @@ public class ListObjectViewModel extends AndroidViewModel {
         return objet;
     }
 
-    // Mettre à jour le statut d'un objet
+    private Declaration cursorToDeclaration(Cursor cursor) {
+        Declaration declaration = new Declaration();
+
+        int idIndex = cursor.getColumnIndex("id_declaration");
+        int userIdIndex = cursor.getColumnIndex("id_user");
+        int nameIndex = cursor.getColumnIndex("name");
+        int phoneIndex = cursor.getColumnIndex("phone");
+        int matriculeIndex = cursor.getColumnIndex("matricule");
+        int descIndex = cursor.getColumnIndex("description");
+        int typeIdIndex = cursor.getColumnIndex("id_type");
+        int typeNameIndex = cursor.getColumnIndex("nom_type");
+        int dateIndex = cursor.getColumnIndex("date_declaration");
+        int statutIndex = cursor.getColumnIndex("statut");
+        int adminIdIndex = cursor.getColumnIndex("id_admin");
+
+        if (idIndex != -1) declaration.setIdDeclaration(cursor.getInt(idIndex));
+        if (userIdIndex != -1) declaration.setIdUser(cursor.getInt(userIdIndex));
+        if (nameIndex != -1) declaration.setUserName(cursor.getString(nameIndex));
+        if (phoneIndex != -1) declaration.setUserPhone(cursor.getString(phoneIndex));
+        if (matriculeIndex != -1) declaration.setUserMatricule(cursor.getString(matriculeIndex));
+        if (descIndex != -1) declaration.setDescription(cursor.getString(descIndex));
+        if (typeIdIndex != -1) declaration.setIdType(cursor.getInt(typeIdIndex));
+        if (typeNameIndex != -1) declaration.setNomType(cursor.getString(typeNameIndex));
+        if (dateIndex != -1) declaration.setDateDeclaration(cursor.getString(dateIndex));
+        if (statutIndex != -1) declaration.setStatut(cursor.getString(statutIndex));
+        if (adminIdIndex != -1) declaration.setIdAdmin(cursor.getInt(adminIdIndex));
+
+        Cursor imageCursor = databaseHelper.getImagesByDeclaration(declaration.getIdDeclaration());
+        if (imageCursor != null) {
+            while (imageCursor.moveToNext()) {
+                int cheminIndex = imageCursor.getColumnIndex("chemin_image");
+                if (cheminIndex != -1) {
+                    declaration.addCheminImage(imageCursor.getString(cheminIndex));
+                }
+            }
+            imageCursor.close();
+        }
+
+        return declaration;
+    }
+
     public void updateObjetStatut(int objetId, String newStatut) {
         new Thread(() -> {
             boolean success = databaseHelper.updateObjetStatut(objetId, newStatut);
@@ -175,12 +266,9 @@ public class ListObjectViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Supprimer un objet
     public void deleteObjet(int objetId) {
         new Thread(() -> {
-            // Supprimer d'abord les images
             databaseHelper.deleteImagesByObjet(objetId);
-            // Puis supprimer l'objet
             boolean success = databaseHelper.deleteObjet(objetId);
             if (success) {
                 actionResult.postValue("Objet supprimé");
@@ -191,7 +279,6 @@ public class ListObjectViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Obtenir un objet par son ID
     public Objet getObjetById(int objetId) {
         List<Objet> objets = objetsLiveData.getValue();
         if (objets != null) {
@@ -204,17 +291,14 @@ public class ListObjectViewModel extends AndroidViewModel {
         return null;
     }
 
-    // Utilitaires
     private String getStatusColor(String statut) {
         switch (statut) {
             case "En attente":
                 return "yellow";
             case "En cours de vérification":
-                return "orange";
+                return "blue";
             case "Récupéré":
                 return "green";
-            case "Rejeté":
-                return "red";
             default:
                 return "gray";
         }

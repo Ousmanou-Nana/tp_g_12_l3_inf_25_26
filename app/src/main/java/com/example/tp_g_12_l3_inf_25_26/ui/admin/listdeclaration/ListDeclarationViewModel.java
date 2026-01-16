@@ -10,19 +10,27 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.tp_g_12_l3_inf_25_26.DB.DatabaseHelper;
 import com.example.tp_g_12_l3_inf_25_26.models.Declaration;
+import com.example.tp_g_12_l3_inf_25_26.models.Objet;
 import com.example.tp_g_12_l3_inf_25_26.utils.ColumnDef;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ListDeclarationViewModel extends AndroidViewModel {
 
     private final DatabaseHelper databaseHelper;
     private final MutableLiveData<List<TableRow>> rowsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Declaration>> declarationsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Objet>> potentialMatchesLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> actionResult = new MutableLiveData<>();
+
+    // Store current admin ID (should be set from login)
+    private int currentAdminId = 1; // Default, should be set properly
 
     public ListDeclarationViewModel(@NonNull Application application) {
         super(application);
@@ -30,7 +38,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         loadDeclarations();
     }
 
-    // Colonnes du tableau
     public List<ColumnDef> getColumns() {
         List<ColumnDef> columns = new ArrayList<>();
         columns.add(new ColumnDef("N°", 1, true));
@@ -52,11 +59,18 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         return declarationsLiveData;
     }
 
+    public LiveData<List<Objet>> getPotentialMatchesLiveData() {
+        return potentialMatchesLiveData;
+    }
+
     public LiveData<String> getActionResult() {
         return actionResult;
     }
 
-    // Charger toutes les déclarations
+    public void setCurrentAdminId(int adminId) {
+        this.currentAdminId = adminId;
+    }
+
     public void loadDeclarations() {
         new Thread(() -> {
             List<Declaration> declarations = new ArrayList<>();
@@ -94,7 +108,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Charger les déclarations par statut
     public void loadDeclarationsByStatut(String statut) {
         new Thread(() -> {
             List<Declaration> declarations = new ArrayList<>();
@@ -132,7 +145,46 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Convertir un Cursor en Declaration
+    // Load potential matching objects for a declaration
+    public void loadPotentialMatchingObjets(int typeId, int declarationId) {
+        new Thread(() -> {
+            List<Objet> objets = new ArrayList<>();
+
+            Cursor cursor = databaseHelper.getPotentialMatchingObjets(typeId, declarationId);
+
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    Objet objet = cursorToObjet(cursor);
+                    objets.add(objet);
+                }
+                cursor.close();
+            }
+
+            potentialMatchesLiveData.postValue(objets);
+        }).start();
+    }
+
+    // Create a matching between declaration and object
+    public void createMatching(int declarationId, int objetId) {
+        new Thread(() -> {
+            String currentDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(new Date());
+
+            long result = databaseHelper.createMatching(
+                    declarationId,
+                    objetId,
+                    currentAdminId,
+                    currentDate
+            );
+
+            if (result != -1) {
+                actionResult.postValue("Correspondance créée avec succès");
+            } else {
+                actionResult.postValue("Erreur lors de la création de la correspondance");
+            }
+        }).start();
+    }
+
     private Declaration cursorToDeclaration(Cursor cursor) {
         Declaration declaration = new Declaration();
 
@@ -160,7 +212,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         if (statutIndex != -1) declaration.setStatut(cursor.getString(statutIndex));
         if (adminIdIndex != -1) declaration.setIdAdmin(cursor.getInt(adminIdIndex));
 
-        // Charger les images
         Cursor imageCursor = databaseHelper.getImagesByDeclaration(declaration.getIdDeclaration());
         if (imageCursor != null) {
             while (imageCursor.moveToNext()) {
@@ -175,7 +226,43 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         return declaration;
     }
 
-    // Valider une déclaration (mettre en cours de vérification)
+    private Objet cursorToObjet(Cursor cursor) {
+        Objet objet = new Objet();
+
+        int idIndex = cursor.getColumnIndex("id_objet");
+        int nomIndex = cursor.getColumnIndex("nom_declarant");
+        int telIndex = cursor.getColumnIndex("telephone");
+        int descIndex = cursor.getColumnIndex("description");
+        int typeIdIndex = cursor.getColumnIndex("id_type");
+        int typeNameIndex = cursor.getColumnIndex("nom_type");
+        int dateIndex = cursor.getColumnIndex("date_declaration");
+        int statutIndex = cursor.getColumnIndex("statut");
+        int adminIdIndex = cursor.getColumnIndex("id_admin");
+
+        if (idIndex != -1) objet.setIdObjet(cursor.getInt(idIndex));
+        if (nomIndex != -1) objet.setNomDeclarant(cursor.getString(nomIndex));
+        if (telIndex != -1) objet.setTelephone(cursor.getString(telIndex));
+        if (descIndex != -1) objet.setDescription(cursor.getString(descIndex));
+        if (typeIdIndex != -1) objet.setIdType(cursor.getInt(typeIdIndex));
+        if (typeNameIndex != -1) objet.setNomType(cursor.getString(typeNameIndex));
+        if (dateIndex != -1) objet.setDateDeclaration(cursor.getString(dateIndex));
+        if (statutIndex != -1) objet.setStatut(cursor.getString(statutIndex));
+        if (adminIdIndex != -1) objet.setIdAdmin(cursor.getInt(adminIdIndex));
+
+        Cursor imageCursor = databaseHelper.getImagesByObjet(objet.getIdObjet());
+        if (imageCursor != null) {
+            while (imageCursor.moveToNext()) {
+                int cheminIndex = imageCursor.getColumnIndex("chemin_image");
+                if (cheminIndex != -1) {
+                    objet.addCheminImage(imageCursor.getString(cheminIndex));
+                }
+            }
+            imageCursor.close();
+        }
+
+        return objet;
+    }
+
     public void validateDeclaration(int declarationId) {
         new Thread(() -> {
             boolean success = databaseHelper.updateDeclarationStatut(declarationId, "En cours de vérification");
@@ -188,7 +275,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Marquer comme récupéré
     public void markAsRecovered(int declarationId) {
         new Thread(() -> {
             boolean success = databaseHelper.updateDeclarationStatut(declarationId, "Récupéré");
@@ -201,7 +287,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Rejeter une déclaration
     public void rejectDeclaration(int declarationId) {
         new Thread(() -> {
             boolean success = databaseHelper.updateDeclarationStatut(declarationId, "Rejeté");
@@ -214,12 +299,9 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Supprimer une déclaration
     public void deleteDeclaration(int declarationId) {
         new Thread(() -> {
-            // Supprimer d'abord les images
             databaseHelper.deleteImagesByDeclaration(declarationId);
-            // Puis supprimer la déclaration
             boolean success = databaseHelper.deleteDeclaration(declarationId);
             if (success) {
                 actionResult.postValue("Déclaration supprimée");
@@ -230,7 +312,6 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         }).start();
     }
 
-    // Obtenir une déclaration par son ID
     public Declaration getDeclarationById(int declarationId) {
         List<Declaration> declarations = declarationsLiveData.getValue();
         if (declarations != null) {
@@ -243,13 +324,12 @@ public class ListDeclarationViewModel extends AndroidViewModel {
         return null;
     }
 
-    // Utilitaires
     private String getStatusColor(String statut) {
         switch (statut) {
             case "En attente":
                 return "yellow";
             case "En cours de vérification":
-                return "orange";
+                return "blue";
             case "Récupéré":
                 return "green";
             case "Rejeté":

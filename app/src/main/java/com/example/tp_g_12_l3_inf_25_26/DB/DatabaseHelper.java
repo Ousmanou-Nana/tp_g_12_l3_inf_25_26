@@ -88,6 +88,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         ")";
         db.execSQL(createImageTable);
 
+        String createMatchingTable =
+                "CREATE TABLE MATCHING (" +
+                        "id_matching INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "id_declaration INTEGER NOT NULL," +
+                        "id_objet INTEGER NOT NULL," +
+                        "date_matching TEXT NOT NULL," +
+                        "id_admin INTEGER NOT NULL," +
+                        "FOREIGN KEY (id_declaration) REFERENCES DECLARATION(id_declaration) ON DELETE CASCADE," +
+                        "FOREIGN KEY (id_objet) REFERENCES OBJET(id_objet) ON DELETE CASCADE," +
+                        "FOREIGN KEY (id_admin) REFERENCES ADMIN(id_admin)" +
+                        ")";
+        db.execSQL(createMatchingTable);
+
         // Insert default types
         insertDefaultTypes(db);
     }
@@ -100,6 +113,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS USER");
         db.execSQL("DROP TABLE IF EXISTS TYPE_OBJET");
         db.execSQL("DROP TABLE IF EXISTS ADMIN");
+        db.execSQL("DROP TABLE IF EXISTS MATCHING");
         onCreate(db);
     }
 
@@ -210,6 +224,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{statut}
         );
     }
+
 
     public Cursor getDeclarationsByUser(int idUser) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -450,4 +465,113 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(idObjet)}
         ) > 0;
     }
+
+
+    public long createMatching(int idDeclaration, int idObjet, int idAdmin, String dateMatching) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("id_declaration", idDeclaration);
+        values.put("id_objet", idObjet);
+        values.put("id_admin", idAdmin);
+        values.put("date_matching", dateMatching);
+        return db.insert("MATCHING", null, values);
+    }
+
+    /**
+     * Get potential matching objects for a declaration based on type
+     */
+    public Cursor getPotentialMatchingObjets(int idType, int excludeDeclarationId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT o.*, t.nom_type FROM OBJET o " +
+                        "INNER JOIN TYPE_OBJET t ON o.id_type = t.id_type " +
+                        "WHERE o.id_type = ? " +
+                        "AND o.statut IN ('En attente', 'En cours de vérification') " +
+                        "AND o.id_objet NOT IN (" +
+                        "  SELECT id_objet FROM MATCHING WHERE id_declaration = ?" +
+                        ") " +
+                        "ORDER BY o.date_declaration DESC",
+                new String[]{String.valueOf(idType), String.valueOf(excludeDeclarationId)}
+        );
+    }
+
+    /**
+     * Get potential matching declarations for an object based on type
+     */
+    public Cursor getPotentialMatchingDeclarations(int idType, int excludeObjetId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM DECLARATION d " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "WHERE d.id_type = ? " +
+                        "AND d.statut IN ('En attente', 'En cours de vérification') " +
+                        "AND d.id_declaration NOT IN (" +
+                        "  SELECT id_declaration FROM MATCHING WHERE id_objet = ?" +
+                        ") " +
+                        "ORDER BY d.date_declaration DESC",
+                new String[]{String.valueOf(idType), String.valueOf(excludeObjetId)}
+        );
+    }
+
+    /**
+     * Get matching for a declaration
+     */
+    public Cursor getMatchingForDeclaration(int idDeclaration) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT m.*, o.*, t.nom_type " +
+                        "FROM MATCHING m " +
+                        "INNER JOIN OBJET o ON m.id_objet = o.id_objet " +
+                        "INNER JOIN TYPE_OBJET t ON o.id_type = t.id_type " +
+                        "WHERE m.id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
+        );
+    }
+
+    /**
+     * Get matching for an object
+     */
+    public Cursor getMatchingForObjet(int idObjet) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT m.*, d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM MATCHING m " +
+                        "INNER JOIN DECLARATION d ON m.id_declaration = d.id_declaration " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "WHERE m.id_objet = ?",
+                new String[]{String.valueOf(idObjet)}
+        );
+    }
+
+    /**
+     * Check if a matching already exists
+     */
+    public boolean matchingExists(int idDeclaration, int idObjet) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT id_matching FROM MATCHING WHERE id_declaration = ? AND id_objet = ?",
+                new String[]{String.valueOf(idDeclaration), String.valueOf(idObjet)}
+        );
+        boolean exists = cursor != null && cursor.moveToFirst();
+        if (cursor != null) {
+            cursor.close();
+        }
+        return exists;
+    }
+
+    /**
+     * Delete a matching
+     */
+    public boolean deleteMatching(int idMatching) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(
+                "MATCHING",
+                "id_matching = ?",
+                new String[]{String.valueOf(idMatching)}
+        ) > 0;
+    }
+
 }

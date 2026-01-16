@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
 import com.example.tp_g_12_l3_inf_25_26.models.Declaration;
+import com.example.tp_g_12_l3_inf_25_26.models.Objet;
+import com.example.tp_g_12_l3_inf_25_26.ui.admin.matching.MatchingDialog;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 
@@ -36,18 +38,11 @@ public class ListDeclarationFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-
-        return inflater.inflate(
-                R.layout.fragment_list_declaration,
-                container,
-                false
-        );
+        return inflater.inflate(R.layout.fragment_list_declaration, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
-
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(this,
@@ -110,14 +105,12 @@ public class ListDeclarationFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        // Observer les lignes du tableau
         viewModel.getRowsLiveData().observe(getViewLifecycleOwner(), rows -> {
             if (rows != null) {
                 adapter.updateData(rows);
             }
         });
 
-        // Observer les résultats des actions
         viewModel.getActionResult().observe(getViewLifecycleOwner(), result -> {
             if (result != null) {
                 Toast.makeText(requireContext(), result, Toast.LENGTH_LONG).show();
@@ -126,7 +119,6 @@ public class ListDeclarationFragment extends Fragment {
     }
 
     private void showActionDialog(TableRow row) {
-        // Récupérer l'ID de la déclaration (première colonne)
         List<String> data = row.getData();
         if (data == null || data.isEmpty()) return;
 
@@ -144,15 +136,13 @@ public class ListDeclarationFragment extends Fragment {
             return;
         }
 
-        // Créer le message avec les détails
         String message = buildDetailMessage(declaration);
 
-        // Afficher le dialogue avec les options
         new AlertDialog.Builder(requireContext())
                 .setTitle("Détails de la déclaration")
                 .setMessage(message)
                 .setPositiveButton("Mettre en vérification", (dialog, which) -> {
-                    viewModel.validateDeclaration(declarationId);
+                    showMatchingObjectsDialog(declaration);
                 })
                 .setNeutralButton("Marquer récupéré", (dialog, which) -> {
                     viewModel.markAsRecovered(declarationId);
@@ -164,6 +154,58 @@ public class ListDeclarationFragment extends Fragment {
                     confirmDelete(declarationId);
                 })
                 .show();
+    }
+
+    private void showMatchingObjectsDialog(Declaration declaration) {
+        // Load potential matching objects
+        viewModel.loadPotentialMatchingObjets(declaration.getIdType(), declaration.getIdDeclaration());
+
+        viewModel.getPotentialMatchesLiveData().observe(getViewLifecycleOwner(), objets -> {
+            if (objets == null || objets.isEmpty()) {
+                // No matches found, just update status
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Aucun objet correspondant")
+                        .setMessage("Aucun objet trouvé de même type. Voulez-vous quand même mettre en vérification ?")
+                        .setPositiveButton("Oui", (d, w) -> {
+                            viewModel.validateDeclaration(declaration.getIdDeclaration());
+                        })
+                        .setNegativeButton("Non", null)
+                        .show();
+                return;
+            }
+
+            // Show matching dialog
+            MatchingDialog.showMatchingObjectsForDeclaration(
+                    requireContext(),
+                    declaration,
+                    objets,
+                    new MatchingDialog.OnMatchSelectedListener() {
+                        @Override
+                        public void onDeclarationSelected(Declaration d) {
+                            // Not used here
+                        }
+
+                        @Override
+                        public void onObjetSelected(Objet objet) {
+                            // Link declaration with object
+                            viewModel.createMatching(
+                                    declaration.getIdDeclaration(),
+                                    objet.getIdObjet()
+                            );
+                            viewModel.validateDeclaration(declaration.getIdDeclaration());
+                            Toast.makeText(requireContext(),
+                                    "Déclaration liée à l'objet N°" + objet.getIdObjet(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+
+                        @Override
+                        public void onNoMatch() {
+                            // Just update status without linking
+                            viewModel.validateDeclaration(declaration.getIdDeclaration());
+                        }
+                    }
+            );
+        });
     }
 
     private String buildDetailMessage(Declaration declaration) {
