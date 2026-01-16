@@ -41,27 +41,25 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         databaseHelper = new DatabaseHelper(application);
         sharedPreferences = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        // Charger les informations utilisateur depuis le cache
-        loadUserInfoFromCache();
+        // Load user info immediately (synchronously) in constructor
+        String name = sharedPreferences.getString(KEY_USER_NAME, "");
+        String phone = sharedPreferences.getString(KEY_USER_PHONE, "");
+        String matricule = sharedPreferences.getString(KEY_USER_MATRICULE, "");
+        UserInfo userInfo = new UserInfo(name, phone, matricule);
+        userInfoLiveData.setValue(userInfo);
     }
 
     // ==================== CACHE OPERATIONS ====================
 
-    /**
-     * Charge les informations utilisateur depuis SharedPreferences
-     */
     private void loadUserInfoFromCache() {
         String name = sharedPreferences.getString(KEY_USER_NAME, "");
         String phone = sharedPreferences.getString(KEY_USER_PHONE, "");
         String matricule = sharedPreferences.getString(KEY_USER_MATRICULE, "");
 
         UserInfo userInfo = new UserInfo(name, phone, matricule);
-        userInfoLiveData.setValue(userInfo);
+        userInfoLiveData.postValue(userInfo);
     }
 
-    /**
-     * Sauvegarde les informations utilisateur dans SharedPreferences
-     */
     public void saveUserInfoToCache(String name, String phone, String matricule) {
         sharedPreferences.edit()
                 .putString(KEY_USER_NAME, name)
@@ -73,9 +71,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         userInfoLiveData.setValue(userInfo);
     }
 
-    /**
-     * Efface les informations utilisateur du cache
-     */
     public void clearUserCache() {
         sharedPreferences.edit()
                 .remove(KEY_USER_NAME)
@@ -102,9 +97,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== IMAGE OPERATIONS ====================
 
-    /**
-     * Ajoute une image à la liste des images sélectionnées
-     */
     public void addImage(Uri uri) {
         List<Uri> current = selectedImagesLiveData.getValue();
         if (current != null) {
@@ -113,9 +105,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
-    /**
-     * Supprime une image de la liste
-     */
     public void removeImage(int position) {
         List<Uri> current = selectedImagesLiveData.getValue();
         if (current != null && position >= 0 && position < current.size()) {
@@ -124,18 +113,12 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
-    /**
-     * Efface toutes les images
-     */
     public void clearImages() {
         selectedImagesLiveData.setValue(new ArrayList<>());
     }
 
     // ==================== VALIDATION ====================
 
-    /**
-     * Vérifie que tous les champs du formulaire sont remplis
-     */
     public boolean isFormValid(String name, String phone, String matricule, String description, String type) {
         boolean hasImages = selectedImagesLiveData.getValue() != null
                 && !selectedImagesLiveData.getValue().isEmpty();
@@ -146,9 +129,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== TYPES D'OBJETS ====================
 
-    /**
-     * Retourne les types d'objets disponibles depuis la base de données
-     */
     public String[] getObjectTypes() {
         List<String> typesList = new ArrayList<>();
         Cursor cursor = databaseHelper.getAllTypes();
@@ -170,57 +150,59 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     /**
      * Soumet la déclaration à la base de données
+     * Utilise maintenant la table DECLARATION au lieu de OBJET
      */
     public void submitDeclaration(String name, String phone, String matricule,
                                   String description, String type) {
 
-        // Sauvegarder les infos utilisateur dans le cache pour la prochaine fois
         saveUserInfoToCache(name, phone, matricule);
 
         new Thread(() -> {
             try {
-                // Récupérer l'ID du type d'objet
+                // 1. Vérifier si l'utilisateur existe déjà
+                int userId = getUserIdOrCreate(name, phone, matricule);
+                if (userId == -1) {
+                    submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de la création de l'utilisateur"));
+                    return;
+                }
+
+                // 2. Récupérer l'ID du type d'objet
                 int typeId = databaseHelper.getTypeIdByName(type);
                 if (typeId == -1) {
                     submitResultLiveData.postValue(new SubmitResult(false, "Type d'objet invalide"));
                     return;
                 }
 
-                // Date actuelle
+                // 3. Date actuelle
                 String currentDate = new SimpleDateFormat(
                         "yyyy-MM-dd HH:mm:ss",
                         Locale.getDefault()
                 ).format(new Date());
 
-                // Ajouter le matricule à la description
-                String fullDescription = "Matricule: " + matricule + "\n\n" + description;
-
-                // Insérer l'objet (id_admin = null car c'est un utilisateur)
-                long objetId = databaseHelper.insertObjet(
-                        name,
-                        phone,
-                        fullDescription,
+                // 4. Insérer la déclaration dans la table DECLARATION
+                long declarationId = databaseHelper.insertDeclaration(
+                        userId,
+                        description,
                         typeId,
-                        currentDate,
-                        0  // 0 ou null pour les déclarations utilisateur
+                        currentDate
                 );
 
-                if (objetId == -1) {
-                    submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de l'enregistrement"));
+                if (declarationId == -1) {
+                    submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de l'enregistrement de la déclaration"));
                     return;
                 }
 
-                // Sauvegarder les images
+                // 5. Sauvegarder les images
                 List<Uri> images = selectedImagesLiveData.getValue();
                 if (images != null && !images.isEmpty()) {
-                    boolean allImagesSaved = saveImagesFromUri((int) objetId, images);
+                    boolean allImagesSaved = saveImagesFromUri((int) declarationId, images);
                     if (!allImagesSaved) {
                         submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de la sauvegarde des images"));
                         return;
                     }
                 }
 
-                // Effacer les images après soumission réussie
+                // 6. Effacer les images après soumission réussie
                 clearImages();
 
                 submitResultLiveData.postValue(new SubmitResult(true, "Déclaration envoyée avec succès"));
@@ -233,9 +215,48 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
     }
 
     /**
-     * Sauvegarde les images depuis les URI
+     * Récupère l'ID de l'utilisateur ou le crée s'il n'existe pas
      */
-    private boolean saveImagesFromUri(int objetId, List<Uri> imageUris) {
+    private int getUserIdOrCreate(String name, String phone, String matricule) {
+        // Vérifier si l'utilisateur existe déjà par matricule
+        Cursor cursor = databaseHelper.getUserByMatricule(matricule);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int idIndex = cursor.getColumnIndex("id_user");
+            int userId = -1;
+            if (idIndex != -1) {
+                userId = cursor.getInt(idIndex);
+
+                // Mettre à jour les infos si elles ont changé
+                int nameIndex = cursor.getColumnIndex("name");
+                int phoneIndex = cursor.getColumnIndex("phone");
+
+                if (nameIndex != -1 && phoneIndex != -1) {
+                    String existingName = cursor.getString(nameIndex);
+                    String existingPhone = cursor.getString(phoneIndex);
+
+                    if (!existingName.equals(name) || !existingPhone.equals(phone)) {
+                        databaseHelper.updateUser(userId, name, phone, matricule);
+                    }
+                }
+            }
+            cursor.close();
+            return userId;
+        }
+
+        if (cursor != null) {
+            cursor.close();
+        }
+
+        // L'utilisateur n'existe pas, le créer
+        long newUserId = databaseHelper.insertUser(name, phone, matricule);
+        return (int) newUserId;
+    }
+
+    /**
+     * Sauvegarde les images depuis les URI pour une déclaration
+     */
+    private boolean saveImagesFromUri(int declarationId, List<Uri> imageUris) {
         File imageDir = new File(getApplication().getFilesDir(), "images");
         if (!imageDir.exists()) {
             imageDir.mkdirs();
@@ -244,7 +265,7 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         for (int i = 0; i < imageUris.size(); i++) {
             try {
                 Uri uri = imageUris.get(i);
-                String fileName = "user_objet_" + objetId + "_img_" + i + ".jpg";
+                String fileName = "user_declaration_" + declarationId + "_img_" + i + ".jpg";
                 File imageFile = new File(imageDir, fileName);
 
                 // Copier le contenu de l'URI vers le fichier
@@ -259,8 +280,12 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
                     outputStream.close();
                     inputStream.close();
 
-                    // Enregistrer le chemin dans la base de données
-                    boolean inserted = databaseHelper.insertImage(objetId, imageFile.getAbsolutePath());
+                    // Enregistrer le chemin dans la base de données (pour DECLARATION)
+                    boolean inserted = databaseHelper.insertImageForDeclaration(
+                            declarationId,
+                            imageFile.getAbsolutePath()
+                    );
+
                     if (!inserted) {
                         return false;
                     }
@@ -279,9 +304,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== INNER CLASSES ====================
 
-    /**
-     * Classe pour stocker les informations utilisateur
-     */
     public static class UserInfo {
         private final String name;
         private final String phone;
@@ -310,9 +332,6 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
-    /**
-     * Classe pour le résultat de soumission
-     */
     public static class SubmitResult {
         private final boolean success;
         private final String message;
