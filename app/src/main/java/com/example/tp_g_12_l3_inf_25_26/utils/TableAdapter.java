@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -23,7 +24,7 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
 
     private final Context context;
     private final List<ColumnDef> columns;
-    private final List<T> data;
+    private List<T> data;
     private final OnRowClickListener<T> rowClickListener;
 
     private int sortIndex = -1;
@@ -36,8 +37,48 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
     public TableAdapter(Context context, List<ColumnDef> columns, List<T> data, OnRowClickListener<T> rowClickListener) {
         this.context = context;
         this.columns = columns;
-        this.data = data;
+        this.data = data != null ? data : new ArrayList<>();
         this.rowClickListener = rowClickListener;
+    }
+
+    /**
+     * Méthode pour mettre à jour les données du tableau
+     */
+    public void updateData(List<T> newData) {
+        this.data = newData != null ? newData : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Méthode pour ajouter des données
+     */
+    public void addData(T item) {
+        if (this.data == null) {
+            this.data = new ArrayList<>();
+        }
+        this.data.add(item);
+        notifyItemInserted(data.size());
+    }
+
+    /**
+     * Méthode pour supprimer des données
+     */
+    public void removeData(int position) {
+        if (data != null && position >= 0 && position < data.size()) {
+            data.remove(position);
+            notifyItemRemoved(position + 1); // +1 car la position 0 est le header
+        }
+    }
+
+    /**
+     * Méthode pour effacer toutes les données
+     */
+    public void clearData() {
+        if (data != null) {
+            int size = data.size();
+            data.clear();
+            notifyItemRangeRemoved(1, size);
+        }
     }
 
     @Override
@@ -47,7 +88,7 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
 
     @Override
     public int getItemCount() {
-        return data.size() + 1;
+        return (data != null ? data.size() : 0) + 1;
     }
 
     @NonNull
@@ -89,8 +130,6 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
                 container.addView(tv);
             }
         }
-
-
     }
 
     class RowHolder extends RecyclerView.ViewHolder {
@@ -102,16 +141,17 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
         }
 
         void bind(T row, int position) {
-
             container.removeAllViews();
             List<String> cells = row.cells();
 
             for (int i = 0; i < columns.size(); i++) {
                 ColumnDef col = columns.get(i);
-                container.addView(buildCell(cells.get(i), col.weight, false));
+                String cellValue = i < cells.size() ? cells.get(i) : "";
+                container.addView(buildCell(cellValue, col.weight, false));
             }
 
-            String status = cells.get(cells.size() - 1);
+            // Le dernier élément est le code couleur du statut
+            String status = cells.size() > 0 ? cells.get(cells.size() - 1) : "white";
 
             int backgroundColor = resolveStatusColor(status, position);
             container.setBackgroundColor(backgroundColor);
@@ -124,7 +164,6 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
         }
 
         private int resolveStatusColor(String status, int position) {
-
             if ("red".equals(status)) {
                 return alternateRed(position);
             }
@@ -137,9 +176,15 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
                 return alternateGreen(position);
             }
 
+            if ("blue".equals(status)) {
+                return alternateBlue(position);
+            }
+
+            if ("gray".equals(status)) {
+                return alternateGray(position);
+            }
+
             return 0xFFFFFFFF;
-
-
         }
 
         private int alternateRed(int position) {
@@ -160,6 +205,17 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
             return position % 2 == 0 ? strong : light;
         }
 
+        private int alternateBlue(int position) {
+            int strong = 0xFFBBDEFB;
+            int light = 0xFFE3F2FD;
+            return position % 2 == 0 ? strong : light;
+        }
+
+        private int alternateGray(int position) {
+            int strong = 0xFFE0E0E0;
+            int light = 0xFFF5F5F5;
+            return position % 2 == 0 ? strong : light;
+        }
     }
 
     private TextView buildCell(String text, int weight, boolean bold) {
@@ -173,12 +229,25 @@ public class TableAdapter<T extends TableRow> extends RecyclerView.Adapter<Recyc
     }
 
     private void sortBy(int index) {
-        if (sortIndex == index) asc = !asc;
-        else { sortIndex = index; asc = true; }
+        if (data == null || data.isEmpty()) return;
+
+        if (sortIndex == index) {
+            asc = !asc;
+        } else {
+            sortIndex = index;
+            asc = true;
+        }
 
         data.sort((a, b) -> {
-            String va = a.cells().get(index);
-            String vb = b.cells().get(index);
+            List<String> cellsA = a.cells();
+            List<String> cellsB = b.cells();
+
+            if (index >= cellsA.size() || index >= cellsB.size()) {
+                return 0;
+            }
+
+            String va = cellsA.get(index);
+            String vb = cellsB.get(index);
             return asc ? va.compareTo(vb) : vb.compareTo(va);
         });
         notifyDataSetChanged();

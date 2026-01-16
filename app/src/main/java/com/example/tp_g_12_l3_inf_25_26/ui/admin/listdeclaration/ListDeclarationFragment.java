@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,12 +16,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
+import com.example.tp_g_12_l3_inf_25_26.models.Declaration;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
+
+import java.util.List;
 
 public class ListDeclarationFragment extends Fragment {
 
     private ListDeclarationViewModel viewModel;
+    private TableAdapter<TableRow> adapter;
+    private Button btnAll, btnPending, btnValidated, btnRecovered, btnRefresh;
 
     public static ListDeclarationFragment newInstance() {
         return new ListDeclarationFragment();
@@ -44,45 +50,155 @@ public class ListDeclarationFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(this)
+        viewModel = new ViewModelProvider(this,
+                ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication()))
                 .get(ListDeclarationViewModel.class);
 
-        RecyclerView recycler = view.findViewById(R.id.table);
-        recycler.setLayoutManager(
-                new LinearLayoutManager(requireContext())
-        );
+        initViews(view);
+        setupRecyclerView(view);
+        setupButtons();
+        observeViewModel();
+    }
 
-        TableAdapter<TableRow> adapter =
-                new TableAdapter<>(
-                        requireContext(),
-                        viewModel.getColumns(),
-                        viewModel.getRows(),
-                        row -> showDialog(row)
-                );
+    private void initViews(View view) {
+        btnAll = view.findViewById(R.id.btnAll);
+        btnPending = view.findViewById(R.id.btnPending);
+        btnValidated = view.findViewById(R.id.btnValidated);
+        btnRecovered = view.findViewById(R.id.btnRecovered);
+        btnRefresh = view.findViewById(R.id.btnRefresh);
+    }
+
+    private void setupRecyclerView(View view) {
+        RecyclerView recycler = view.findViewById(R.id.table);
+        recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        adapter = new TableAdapter<>(
+                requireContext(),
+                viewModel.getColumns(),
+                null,
+                row -> showActionDialog(row)
+        );
 
         recycler.setAdapter(adapter);
     }
 
-    private void showDialog(TableRow row) {
+    private void setupButtons() {
+        btnAll.setOnClickListener(v -> {
+            viewModel.loadDeclarations();
+            Toast.makeText(requireContext(), "Affichage de toutes les déclarations", Toast.LENGTH_SHORT).show();
+        });
 
+        btnPending.setOnClickListener(v -> {
+            viewModel.loadDeclarationsByStatut("En attente");
+            Toast.makeText(requireContext(), "Affichage des déclarations en attente", Toast.LENGTH_SHORT).show();
+        });
+
+        btnValidated.setOnClickListener(v -> {
+            viewModel.loadDeclarationsByStatut("En cours de vérification");
+            Toast.makeText(requireContext(), "Affichage des déclarations en cours de vérification", Toast.LENGTH_SHORT).show();
+        });
+
+        btnRecovered.setOnClickListener(v -> {
+            viewModel.loadDeclarationsByStatut("Récupéré");
+            Toast.makeText(requireContext(), "Affichage des objets récupérés", Toast.LENGTH_SHORT).show();
+        });
+
+        btnRefresh.setOnClickListener(v -> {
+            viewModel.loadDeclarations();
+            Toast.makeText(requireContext(), "Liste actualisée", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void observeViewModel() {
+        // Observer les lignes du tableau
+        viewModel.getRowsLiveData().observe(getViewLifecycleOwner(), rows -> {
+            if (rows != null) {
+                adapter.updateData(rows);
+            }
+        });
+
+        // Observer les résultats des actions
+        viewModel.getActionResult().observe(getViewLifecycleOwner(), result -> {
+            if (result != null) {
+                Toast.makeText(requireContext(), result, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void showActionDialog(TableRow row) {
+        // Récupérer l'ID de la déclaration (première colonne)
+        List<String> data = row.getData();
+        if (data == null || data.isEmpty()) return;
+
+        int declarationId;
+        try {
+            declarationId = Integer.parseInt(data.get(0));
+        } catch (NumberFormatException e) {
+            Toast.makeText(requireContext(), "Erreur: ID invalide", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Declaration declaration = viewModel.getDeclarationById(declarationId);
+        if (declaration == null) {
+            Toast.makeText(requireContext(), "Déclaration introuvable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Créer le message avec les détails
+        String message = buildDetailMessage(declaration);
+
+        // Afficher le dialogue avec les options
         new AlertDialog.Builder(requireContext())
-                .setTitle("Comparaison")
-                .setMessage("Voulez-vous comparer cette déclaration à un objet précis ?")
-                .setPositiveButton("Comparer", (dialog, which) -> {
+                .setTitle("Détails de la déclaration")
+                .setMessage(message)
+                .setPositiveButton("Mettre en vérification", (dialog, which) -> {
+                    viewModel.validateDeclaration(declarationId);
+                })
+                .setNeutralButton("Marquer récupéré", (dialog, which) -> {
+                    viewModel.markAsRecovered(declarationId);
+                })
+                .setNegativeButton("Rejeter", (dialog, which) -> {
+                    confirmReject(declarationId);
+                })
+                .setNeutralButton("Supprimer", (dialog, which) -> {
+                    confirmDelete(declarationId);
+                })
+                .show();
+    }
 
-                    // TODO: ouvrir l’écran de comparaison
-                    // Exemple:
-                    // Navigation vers ImageVerificationFragment ou LostObjectListFragment
-                    // en passant l’id de la déclaration
+    private String buildDetailMessage(Declaration declaration) {
+        StringBuilder message = new StringBuilder();
+        message.append("N° : ").append(declaration.getIdDeclaration()).append("\n\n");
+        message.append("Déclarant : ").append(declaration.getUserName()).append("\n");
+        message.append("Téléphone : ").append(declaration.getUserPhone()).append("\n");
+        message.append("Matricule : ").append(declaration.getUserMatricule()).append("\n");
+        message.append("Type : ").append(declaration.getNomType()).append("\n");
+        message.append("Statut : ").append(declaration.getStatut()).append("\n");
+        message.append("Date : ").append(declaration.getDateDeclaration()).append("\n\n");
+        message.append("Description :\n").append(declaration.getDescription()).append("\n\n");
+        message.append("Nombre d'images : ").append(declaration.getCheminImages().size());
+        return message.toString();
+    }
 
-                    Toast.makeText(
-                            requireContext(),
-                            "Ouverture de la page de comparaison",
-                            Toast.LENGTH_SHORT
-                    ).show();
+    private void confirmReject(int declarationId) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Confirmation")
+                .setMessage("Êtes-vous sûr de vouloir rejeter cette déclaration ?")
+                .setPositiveButton("Oui", (dialog, which) -> {
+                    viewModel.rejectDeclaration(declarationId);
+                })
+                .setNegativeButton("Non", null)
+                .show();
+    }
+
+    private void confirmDelete(int declarationId) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Confirmation")
+                .setMessage("Êtes-vous sûr de vouloir supprimer définitivement cette déclaration ? Cette action est irréversible.")
+                .setPositiveButton("Supprimer", (dialog, which) -> {
+                    viewModel.deleteDeclaration(declarationId);
                 })
                 .setNegativeButton("Annuler", null)
                 .show();
     }
-
 }

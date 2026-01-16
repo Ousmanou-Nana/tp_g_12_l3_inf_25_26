@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "Gestion_Objet";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3; // Incremented version
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -34,7 +34,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         ")";
         db.execSQL(createTypeObjetTable);
 
-        // Table OBJET
+        // Table USER (for registered users)
+        String createUserTable =
+                "CREATE TABLE USER (" +
+                        "id_user INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL," +
+                        "phone TEXT NOT NULL," +
+                        "matricule TEXT NOT NULL UNIQUE" +
+                        ")";
+        db.execSQL(createUserTable);
+
+        // Table DECLARATION (declarations made by users)
+        String createDeclarationTable =
+                "CREATE TABLE DECLARATION (" +
+                        "id_declaration INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "id_user INTEGER NOT NULL," +
+                        "description TEXT NOT NULL," +
+                        "id_type INTEGER NOT NULL," +
+                        "date_declaration TEXT NOT NULL," +
+                        "statut TEXT DEFAULT 'En attente'," +
+                        "id_admin INTEGER," +
+                        "FOREIGN KEY (id_user) REFERENCES USER(id_user)," +
+                        "FOREIGN KEY (id_type) REFERENCES TYPE_OBJET(id_type)," +
+                        "FOREIGN KEY (id_admin) REFERENCES ADMIN(id_admin)" +
+                        ")";
+        db.execSQL(createDeclarationTable);
+
+        // Table OBJET (kept for compatibility)
         String createObjetTable =
                 "CREATE TABLE OBJET (" +
                         "id_objet INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -50,24 +76,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         ")";
         db.execSQL(createObjetTable);
 
-        // Table IMAGE
+        // Table IMAGE (updated to support both OBJET and DECLARATION)
         String createImageTable =
                 "CREATE TABLE IMAGE (" +
                         "id_image INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "id_objet INTEGER NOT NULL," +
+                        "id_objet INTEGER," +
+                        "id_declaration INTEGER," +
                         "chemin_image TEXT NOT NULL," +
-                        "FOREIGN KEY (id_objet) REFERENCES OBJET(id_objet) ON DELETE CASCADE" +
+                        "FOREIGN KEY (id_objet) REFERENCES OBJET(id_objet) ON DELETE CASCADE," +
+                        "FOREIGN KEY (id_declaration) REFERENCES DECLARATION(id_declaration) ON DELETE CASCADE" +
                         ")";
         db.execSQL(createImageTable);
 
-        // Insérer les types d'objets par défaut
+        // Insert default types
         insertDefaultTypes(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS IMAGE");
+        db.execSQL("DROP TABLE IF EXISTS DECLARATION");
         db.execSQL("DROP TABLE IF EXISTS OBJET");
+        db.execSQL("DROP TABLE IF EXISTS USER");
         db.execSQL("DROP TABLE IF EXISTS TYPE_OBJET");
         db.execSQL("DROP TABLE IF EXISTS ADMIN");
         onCreate(db);
@@ -91,6 +121,128 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put("nom_type", type);
             db.insert("TYPE_OBJET", null, values);
         }
+    }
+
+    // ==================== USER OPERATIONS ====================
+
+    public long insertUser(String name, String phone, String matricule) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("name", name);
+        values.put("phone", phone);
+        values.put("matricule", matricule);
+        return db.insert("USER", null, values);
+    }
+
+    public Cursor getUserByMatricule(String matricule) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT * FROM USER WHERE matricule = ?",
+                new String[]{matricule}
+        );
+    }
+
+    public Cursor getAllUsers() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM USER", null);
+    }
+
+    public boolean updateUser(int idUser, String name, String phone, String matricule) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("name", name);
+        values.put("phone", phone);
+        values.put("matricule", matricule);
+        return db.update(
+                "USER",
+                values,
+                "id_user = ?",
+                new String[]{String.valueOf(idUser)}
+        ) > 0;
+    }
+
+    // ==================== DECLARATION OPERATIONS ====================
+
+    public long insertDeclaration(int idUser, String description, int idType, String dateDeclaration) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("id_user", idUser);
+        values.put("description", description);
+        values.put("id_type", idType);
+        values.put("date_declaration", dateDeclaration);
+        values.put("statut", "En attente");
+        return db.insert("DECLARATION", null, values);
+    }
+
+    public Cursor getAllDeclarations() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM DECLARATION d " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "ORDER BY d.date_declaration DESC",
+                null
+        );
+    }
+
+    public Cursor getDeclarationById(int idDeclaration) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM DECLARATION d " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "WHERE d.id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
+        );
+    }
+
+    public Cursor getDeclarationsByStatut(String statut) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM DECLARATION d " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "WHERE d.statut = ? " +
+                        "ORDER BY d.date_declaration DESC",
+                new String[]{statut}
+        );
+    }
+
+    public Cursor getDeclarationsByUser(int idUser) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT d.*, u.name, u.phone, u.matricule, t.nom_type " +
+                        "FROM DECLARATION d " +
+                        "INNER JOIN USER u ON d.id_user = u.id_user " +
+                        "INNER JOIN TYPE_OBJET t ON d.id_type = t.id_type " +
+                        "WHERE d.id_user = ? " +
+                        "ORDER BY d.date_declaration DESC",
+                new String[]{String.valueOf(idUser)}
+        );
+    }
+
+    public boolean updateDeclarationStatut(int idDeclaration, String newStatut) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("statut", newStatut);
+        return db.update(
+                "DECLARATION",
+                values,
+                "id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
+        ) > 0;
+    }
+
+    public boolean deleteDeclaration(int idDeclaration) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(
+                "DECLARATION",
+                "id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
+        ) > 0;
     }
 
     // ==================== ADMIN OPERATIONS ====================
@@ -169,7 +321,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return typeId;
     }
 
-    // ==================== OBJET OPERATIONS ====================
+    // ==================== OBJET OPERATIONS (kept for compatibility) ====================
 
     public long insertObjet(String nomDeclarant, String telephone,
                             String description, int idType,
@@ -240,12 +392,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // ==================== IMAGE OPERATIONS ====================
 
+    public boolean insertImageForDeclaration(int idDeclaration, String cheminImage) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("id_declaration", idDeclaration);
+        values.put("chemin_image", cheminImage);
+        return db.insert("IMAGE", null, values) != -1;
+    }
+
     public boolean insertImage(int idObjet, String cheminImage) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("id_objet", idObjet);
         values.put("chemin_image", cheminImage);
         return db.insert("IMAGE", null, values) != -1;
+    }
+
+    public Cursor getImagesByDeclaration(int idDeclaration) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT * FROM IMAGE WHERE id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
+        );
     }
 
     public Cursor getImagesByObjet(int idObjet) {
@@ -262,6 +430,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "IMAGE",
                 "id_image = ?",
                 new String[]{String.valueOf(idImage)}
+        ) > 0;
+    }
+
+    public boolean deleteImagesByDeclaration(int idDeclaration) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(
+                "IMAGE",
+                "id_declaration = ?",
+                new String[]{String.valueOf(idDeclaration)}
         ) > 0;
     }
 
