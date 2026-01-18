@@ -26,7 +26,7 @@
             android:text="Bienvenue"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#000000"
             android:layout_marginBottom="8dp"/>
 
         <TextView
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:text="Connectez-vous pour déclarer un objet perdu"
             android:textSize="16sp"
-            android:textColor="#666666"
+            android:textColor="#000000"
             android:gravity="center"
             android:layout_marginBottom="32dp"/>
 
@@ -42,6 +42,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
+            android:textColor="#000000"
             android:hint="Nom complet">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -49,6 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPersonName"
+                android:textColor="#000000"
                 android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -56,12 +58,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
+            android:textColor="#000000"
             android:hint="Téléphone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="#000000"
                 android:inputType="phone"
                 android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>
@@ -70,12 +74,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
+            android:textColor="#000000"
             android:hint="Matricule">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editMatricule"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="#000000"
                 android:inputType="text"
                 android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>

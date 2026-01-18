@@ -8,6 +8,8 @@
 package com.example.tp_g_12_l3_inf_25_26;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import com.example.tp_g_12_l3_inf_25_26.ui.admin.home.HomeAdminFragment;
 import com.example.tp_g_12_l3_inf_25_26.ui.admin.loging.LoginAdminFragment;
@@ -21,6 +23,7 @@ public class MainAdminActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 
         // Définit le layout de l'activité
         setContentView(R.layout.activity_main_admin);

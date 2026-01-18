@@ -14,12 +14,30 @@
         android:textStyle="bold"
         android:paddingBottom="8dp" />
 
-    <TextView
-        android:id="@+id/tvMatchingInfo"
+    <!-- Informations de l'élément principal avec image -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="16dp"
-        android:textSize="14sp" />
+        android:orientation="horizontal"
+        android:paddingBottom="16dp">
+
+        <ImageView
+            android:id="@+id/ivMainItemImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:layout_marginEnd="12dp"
+            android:background="@android:color/darker_gray"
+            android:contentDescription="Image de l'élément" />
+
+        <TextView
+            android:id="@+id/tvMatchingInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:textSize="14sp" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"

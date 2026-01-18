@@ -13,6 +13,7 @@
 package com.example.tp_g_12_l3_inf_25_26.ui.admin.listdeclaration;
 
 import android.app.AlertDialog;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -75,6 +76,10 @@ public class ListDeclarationFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        if (getActivity() != null) {
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+
 
         // ===== INITIALISATION DU VIEWMODEL =====
         viewModel = new ViewModelProvider(this,
@@ -86,6 +91,13 @@ public class ListDeclarationFragment extends Fragment {
         setupRecyclerView(view);    // Configure le tableau RecyclerView
         setupButtons();             // Configure les écouteurs de clics sur les boutons
         observeViewModel();         // Configure les observateurs de LiveData
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (getActivity() != null) {
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
     }
 
     // ===== INITIALISATION DES VUES =====

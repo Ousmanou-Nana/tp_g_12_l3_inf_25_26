@@ -1,5 +1,3 @@
-
-
 // ============================================================================
 // ListObjectFragment.java
 // ============================================================================
@@ -12,11 +10,11 @@
 // - Associer un objet trouvé à une déclaration d'objet perdu (matching)
 // - Supprimer un objet trouvé
 // ============================================================================
-
 package com.example.tp_g_12_l3_inf_25_26.ui.admin.listobject;
 
 import androidx.lifecycle.ViewModelProvider;
 import android.app.AlertDialog;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,63 +36,51 @@ import java.util.List;
 
 public class ListObjectFragment extends Fragment {
 
-    // ===== VIEWMODEL ET ADAPTER =====
     private ListObjectViewModel mViewModel;
-
-    /**
-     * Adapter pour afficher les objets trouvés dans un tableau (RecyclerView)
-     * Gère l'affichage de chaque ligne et le clic sur une ligne
-     */
     private TableAdapter<TableRow> adapter;
 
-    // ===== BOUTONS DE FILTRAGE =====
-    private Button btnAll;              // Afficher tous les objets
-    private Button btnPending;          // Filtrer "En attente"
-    private Button btnVerification;     // Filtrer "En cours de vérification"
-    private Button btnRecovered;        // Filtrer "Récupéré"
-    private Button btnRefresh;          // Rafraîchir la liste
+    private Button btnAll;
+    private Button btnPending;
+    private Button btnVerification;
+    private Button btnRecovered;
+    private Button btnRefresh;
 
-    /**
-     * Méthode factory pour créer une instance du fragment
-     */
     public static ListObjectFragment newInstance() {
         return new ListObjectFragment();
     }
 
-    /**
-     * Crée la vue du fragment en inflatant le layout XML
-     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
         return inflater.inflate(R.layout.fragment_list_object, container, false);
+
     }
 
-    /**
-     * Appelé après la création de la vue
-     * Configure tous les composants de l'interface
-     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        if (getActivity() != null) {
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
 
-        // ===== INITIALISATION DU VIEWMODEL =====
+
         mViewModel = new ViewModelProvider(this,
                 ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication()))
                 .get(ListObjectViewModel.class);
 
-        // ===== CONFIGURATION DE L'INTERFACE =====
-        initViews(view);            // Récupère les références aux boutons
-        setupRecyclerView(view);    // Configure le tableau RecyclerView
-        setupButtons();             // Configure les écouteurs de clics sur les boutons
-        observeViewModel();         // Configure les observateurs de LiveData
+        initViews(view);
+        setupRecyclerView(view);
+        setupButtons();
+        observeViewModel();
     }
-
-    // ===== INITIALISATION DES VUES =====
-
-    /**
-     * Récupère les références à tous les boutons de l'interface
-     */
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (getActivity() != null) {
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
     private void initViews(View view) {
         btnAll = view.findViewById(R.id.btnAll);
         btnPending = view.findViewById(R.id.btnPending);
@@ -103,43 +89,21 @@ public class ListObjectFragment extends Fragment {
         btnRefresh = view.findViewById(R.id.btnRefresh);
     }
 
-    // ===== CONFIGURATION DU RECYCLERVIEW (TABLEAU) =====
-
-    /**
-     * Configure le RecyclerView qui affiche la liste des objets trouvés
-     * Utilise un TableAdapter personnalisé pour l'affichage en tableau
-     */
     private void setupRecyclerView(View view) {
         RecyclerView recycler = view.findViewById(R.id.table);
-
-        // Utilise un LayoutManager linéaire (affichage vertical)
         recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // ===== CRÉATION DE L'ADAPTER =====
         adapter = new TableAdapter<>(
                 requireContext(),
-                mViewModel.getColumns(),     // Définitions des colonnes du tableau
-                null,                        // Données (seront mises à jour via observer)
-                row -> showActionDialog(row) // Action au clic sur une ligne
+                mViewModel.getColumns(),
+                null,
+                row -> showActionDialog(row)
         );
 
-        // Associe l'adapter au RecyclerView
         recycler.setAdapter(adapter);
     }
 
-    // ===== CONFIGURATION DES BOUTONS DE FILTRAGE =====
-
-    /**
-     * Configure les écouteurs de clics pour tous les boutons de filtrage
-     * Chaque bouton charge un sous-ensemble différent d'objets trouvés
-     *
-     * Note: Vérifie que chaque bouton n'est pas null avant de configurer
-     * (protection contre les erreurs si un bouton est manquant dans le layout)
-     */
     private void setupButtons() {
-
-        // ===== BOUTON "TOUS" =====
-        // Affiche tous les objets trouvés sans filtre
         if (btnAll != null) {
             btnAll.setOnClickListener(v -> {
                 mViewModel.loadObjets();
@@ -149,8 +113,6 @@ public class ListObjectFragment extends Fragment {
             });
         }
 
-        // ===== BOUTON "EN ATTENTE" =====
-        // Filtre uniquement les objets qui attendent un traitement
         if (btnPending != null) {
             btnPending.setOnClickListener(v -> {
                 mViewModel.loadObjetsByStatut("En attente");
@@ -160,8 +122,6 @@ public class ListObjectFragment extends Fragment {
             });
         }
 
-        // ===== BOUTON "EN VÉRIFICATION" =====
-        // Filtre les objets en cours de traitement
         if (btnVerification != null) {
             btnVerification.setOnClickListener(v -> {
                 mViewModel.loadObjetsByStatut("En cours de vérification");
@@ -171,8 +131,6 @@ public class ListObjectFragment extends Fragment {
             });
         }
 
-        // ===== BOUTON "RÉCUPÉRÉS" =====
-        // Filtre les objets qui ont été rendus à leurs propriétaires
         if (btnRecovered != null) {
             btnRecovered.setOnClickListener(v -> {
                 mViewModel.loadObjetsByStatut("Récupéré");
@@ -182,8 +140,6 @@ public class ListObjectFragment extends Fragment {
             });
         }
 
-        // ===== BOUTON "RAFRAÎCHIR" =====
-        // Recharge tous les objets (utile pour voir les mises à jour)
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
                 mViewModel.loadObjets();
@@ -194,55 +150,26 @@ public class ListObjectFragment extends Fragment {
         }
     }
 
-    // ===== OBSERVATION DU VIEWMODEL =====
-
-    /**
-     * Configure les observateurs pour réagir aux changements dans le ViewModel
-     */
     private void observeViewModel() {
-
-        // ===== OBSERVER LES LIGNES DU TABLEAU =====
-        // S'exécute chaque fois que les données du tableau changent
         mViewModel.getRowsLiveData().observe(getViewLifecycleOwner(), rows -> {
             if (rows != null) {
-                // Met à jour l'affichage du tableau avec les nouvelles données
                 adapter.updateData(rows);
             }
         });
 
-        // ===== OBSERVER LES RÉSULTATS D'ACTIONS =====
-        // S'exécute après mise à jour statut, suppression, etc.
         mViewModel.getActionResult().observe(getViewLifecycleOwner(), result -> {
             if (result != null) {
-                // Affiche un message de confirmation ou d'erreur
                 Toast.makeText(requireContext(), result, Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    // ===== DIALOGUE D'ACTIONS SUR UN OBJET =====
-
-    /**
-     * Affiche un dialogue avec les détails d'un objet trouvé et les actions possibles
-     *
-     * Actions disponibles:
-     * - Mettre en vérification (avec choix de déclaration correspondante)
-     * - Marquer comme récupéré
-     * - Supprimer
-     *
-     * Note: Pas d'option "Rejeter" pour les objets trouvés
-     * (si un objet trouvé est invalide, on le supprime directement)
-     *
-     * @param row Ligne du tableau cliquée
-     */
     private void showActionDialog(TableRow row) {
-        // ===== RÉCUPÉRATION DE L'ID DE L'OBJET =====
         List<String> data = row.getData();
         if (data == null || data.isEmpty()) return;
 
         int objetId;
         try {
-            // Premier élément = ID de l'objet
             objetId = Integer.parseInt(data.get(0));
         } catch (NumberFormatException e) {
             Toast.makeText(requireContext(),
@@ -251,7 +178,6 @@ public class ListObjectFragment extends Fragment {
             return;
         }
 
-        // ===== RÉCUPÉRATION DE L'OBJET COMPLET =====
         Objet objet = mViewModel.getObjetById(objetId);
         if (objet == null) {
             Toast.makeText(requireContext(),
@@ -260,62 +186,115 @@ public class ListObjectFragment extends Fragment {
             return;
         }
 
-        // ===== CONSTRUCTION DU MESSAGE DE DÉTAILS =====
         String message = buildDetailMessage(objet);
 
-        // ===== AFFICHAGE DU DIALOGUE AVEC ACTIONS =====
         new AlertDialog.Builder(requireContext())
                 .setTitle("Détails de l'objet")
                 .setMessage(message)
-
-                // ===== BOUTON "METTRE EN VÉRIFICATION" =====
-                // Ouvre un dialogue pour associer à une déclaration
                 .setPositiveButton("Mettre en vérification", (dialog, which) -> {
                     showMatchingDeclarationsDialog(objet);
                 })
-
-                // ===== BOUTON "MARQUER RÉCUPÉRÉ" =====
-                // Change le statut à "Récupéré"
+                // ===== MODIFICATION ICI =====
+                // Au lieu de marquer directement comme récupéré,
+                // on vérifie d'abord s'il y a des déclarations matchées
                 .setNeutralButton("Marquer récupéré", (dialog, which) -> {
-                    mViewModel.updateObjetStatut(objetId, "Récupéré");
+                    handleMarkAsRecovered(objet);
                 })
-
-                // ===== BOUTON "SUPPRIMER" =====
-                // Supprime définitivement après confirmation
                 .setNegativeButton("Supprimer", (dialog, which) -> {
                     confirmDelete(objetId);
                 })
                 .show();
     }
 
-    // ===== DIALOGUE DE MATCHING (CORRESPONDANCE) =====
-
+    // ===== NOUVELLE MÉTHODE =====
     /**
-     * Affiche un dialogue permettant d'associer un objet trouvé à une déclaration
-     * C'est l'inverse de showMatchingObjectsDialog dans ListDeclarationFragment
-     *
-     * Processus:
-     * 1. Charge les déclarations du même type
-     * 2. Si aucune déclaration: propose juste de changer le statut
-     * 3. Si déclarations trouvées: affiche une liste pour choisir la correspondance
-     * 4. Crée le lien (matching) entre objet et déclaration choisie
-     *
-     * @param objet Objet trouvé à traiter
+     * Gère le marquage comme récupéré
+     * Vérifie d'abord s'il existe des déclarations matchées
+     * Si oui, affiche la liste pour choisir laquelle marquer comme récupérée
+     * Si non, marque juste l'objet comme récupéré
      */
+    private void handleMarkAsRecovered(Objet objet) {
+        // Charge les déclarations matchées à cet objet
+        mViewModel.loadMatchedDeclarations(objet.getIdObjet());
+
+        // Observer pour une seule fois (removeObservers après utilisation)
+        mViewModel.getMatchedDeclarationsLiveData().observe(getViewLifecycleOwner(), declarations -> {
+            if (declarations == null) {
+                return; // Toujours en chargement
+            }
+
+            // Retire l'observer pour éviter des déclenchements multiples
+            mViewModel.getMatchedDeclarationsLiveData().removeObservers(getViewLifecycleOwner());
+
+            if (declarations.isEmpty()) {
+                // ===== CAS 1: AUCUNE DÉCLARATION MATCHÉE =====
+                // Marque simplement l'objet comme récupéré
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Aucune déclaration associée")
+                        .setMessage("Cet objet n'est associé à aucune déclaration. Voulez-vous quand même le marquer comme récupéré ?")
+                        .setPositiveButton("Oui", (d, w) -> {
+                            mViewModel.updateObjetStatut(objet.getIdObjet(), "Récupéré");
+                        })
+                        .setNegativeButton("Non", null)
+                        .show();
+            } else {
+                // ===== CAS 2: DÉCLARATIONS MATCHÉES TROUVÉES =====
+                // Affiche un dialogue avec la liste des déclarations matchées
+                showRecoveryDeclarationsDialog(objet, declarations);
+            }
+        });
+    }
+
+    // =====  MÉTHODE =====
+    /**
+     * Affiche un dialogue avec les déclarations matchées
+     * Permet de choisir laquelle marquer comme récupérée
+     */
+    private void showRecoveryDeclarationsDialog(Objet objet, List<Declaration> declarations) {
+        MatchingDialog.showMatchingDeclarationsForObjet(
+                requireContext(),
+                objet,
+                declarations,
+                new MatchingDialog.OnMatchSelectedListener() {
+                    @Override
+                    public void onDeclarationSelected(Declaration declaration) {
+                        // Marque la déclaration sélectionnée comme récupérée
+                        mViewModel.updateDeclarationStatut(
+                                declaration.getIdDeclaration(),
+                                "Récupéré"
+                        );
+
+                        // Marque aussi l'objet comme récupéré
+                        mViewModel.updateObjetStatut(objet.getIdObjet(), "Récupéré");
+
+                        Toast.makeText(requireContext(),
+                                "Déclaration N°" + declaration.getIdDeclaration() + " marquée comme récupérée",
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onObjetSelected(Objet o) {
+                        // Non utilisé dans ce contexte
+                    }
+
+                    @Override
+                    public void onNoMatch() {
+                        // L'utilisateur a choisi "Aucune correspondance"
+                        // Marque juste l'objet comme récupéré sans toucher aux déclarations
+                        mViewModel.updateObjetStatut(objet.getIdObjet(), "Récupéré");
+                    }
+                }
+        );
+    }
+
     private void showMatchingDeclarationsDialog(Objet objet) {
-        // ===== CHARGEMENT DES DÉCLARATIONS CORRESPONDANTES POTENTIELLES =====
-        // Charge les déclarations du même type (ex: toutes les déclarations de clés perdues)
         mViewModel.loadPotentialMatchingDeclarations(
                 objet.getIdType(),
                 objet.getIdObjet()
         );
 
-        // ===== OBSERVATION DES RÉSULTATS =====
         mViewModel.getPotentialMatchesLiveData().observe(getViewLifecycleOwner(), declarations -> {
-
-            // ===== CAS 1: AUCUNE DÉCLARATION CORRESPONDANTE =====
             if (declarations == null || declarations.isEmpty()) {
-                // Propose simplement de changer le statut sans lier à une déclaration
                 new AlertDialog.Builder(requireContext())
                         .setTitle("Aucune déclaration correspondante")
                         .setMessage("Aucune déclaration de même type. Voulez-vous quand même mettre en vérification ?")
@@ -327,30 +306,20 @@ public class ListObjectFragment extends Fragment {
                 return;
             }
 
-            // ===== CAS 2: DÉCLARATIONS TROUVÉES =====
-            // Affiche un dialogue personnalisé avec la liste des déclarations
             MatchingDialog.showMatchingDeclarationsForObjet(
                     requireContext(),
                     objet,
                     declarations,
                     new MatchingDialog.OnMatchSelectedListener() {
-
-                        /**
-                         * Appelé quand l'admin sélectionne une déclaration correspondante
-                         * Crée le lien entre l'objet trouvé et la déclaration
-                         */
                         @Override
                         public void onDeclarationSelected(Declaration declaration) {
-                            // Crée la correspondance dans la BDD
                             mViewModel.createMatching(
                                     declaration.getIdDeclaration(),
                                     objet.getIdObjet()
                             );
 
-                            // Change le statut à "En cours de vérification"
                             mViewModel.updateObjetStatut(objet.getIdObjet(), "En cours de vérification");
 
-                            // Confirme à l'admin
                             Toast.makeText(requireContext(),
                                     "Objet lié à la déclaration N°" + declaration.getIdDeclaration(),
                                     Toast.LENGTH_LONG).show();
@@ -358,14 +327,9 @@ public class ListObjectFragment extends Fragment {
 
                         @Override
                         public void onObjetSelected(Objet o) {
-                            // Non utilisé dans ce contexte
-                            // (utilisé quand on fait le matching depuis les déclarations)
+                            // Non utilisé
                         }
 
-                        /**
-                         * Appelé si l'admin choisit "Aucune correspondance"
-                         * Change juste le statut sans créer de lien
-                         */
                         @Override
                         public void onNoMatch() {
                             mViewModel.updateObjetStatut(objet.getIdObjet(), "En cours de vérification");
@@ -375,46 +339,19 @@ public class ListObjectFragment extends Fragment {
         });
     }
 
-    // ===== CONSTRUCTION DU MESSAGE DE DÉTAILS =====
-
-    /**
-     * Construit un message formaté avec tous les détails d'un objet trouvé
-     *
-     * @param objet Objet à afficher
-     * @return Message formaté multi-lignes
-     */
     private String buildDetailMessage(Objet objet) {
         StringBuilder message = new StringBuilder();
-
-        // Informations principales
         message.append("N° : ").append(objet.getIdObjet()).append("\n\n");
-
-        // Informations sur le déclarant (qui a trouvé l'objet)
         message.append("Déclarant : ").append(objet.getNomDeclarant()).append("\n");
         message.append("Téléphone : ").append(objet.getTelephone()).append("\n");
-
-        // Informations sur l'objet
         message.append("Type : ").append(objet.getNomType()).append("\n");
         message.append("Statut : ").append(objet.getStatut()).append("\n");
         message.append("Date : ").append(objet.getDateDeclaration()).append("\n\n");
-
-        // Description détaillée
         message.append("Description :\n").append(objet.getDescription()).append("\n\n");
-
-        // Nombre d'images
         message.append("Nombre d'images : ").append(objet.getCheminImages().size());
-
         return message.toString();
     }
 
-    // ===== DIALOGUE DE CONFIRMATION =====
-
-    /**
-     * Demande confirmation avant de supprimer définitivement un objet trouvé
-     * ATTENTION: Action irréversible
-     *
-     * @param objetId ID de l'objet à supprimer
-     */
     private void confirmDelete(int objetId) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Confirmation")
