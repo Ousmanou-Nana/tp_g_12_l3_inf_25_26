@@ -133,7 +133,7 @@ public class UserDeclareObjectFrom extends Fragment {
                     clearFormFields();
                     clearImageViews();
 
-                    // Optionnel: naviguer vers une autre page
+
                     // navigateToLostList();
                 }
             }
@@ -170,7 +170,7 @@ public class UserDeclareObjectFrom extends Fragment {
     }
 
     private void addImage(Uri uri) {
-        // Trouver le dernier slot vide
+
         View lastItem = containerImages.getChildAt(containerImages.getChildCount() - 1);
         ImageView image = lastItem.findViewById(R.id.image);
         ImageView plusIcon = lastItem.findViewById(R.id.plusIcon);
@@ -180,19 +180,19 @@ public class UserDeclareObjectFrom extends Fragment {
 
         mViewModel.addImage(uri);
 
-        // Ajouter un nouveau slot pour la prochaine image
+
         addImageView();
     }
 
     private void clearFormFields() {
         editDescription.setText("");
         spinnerObjectType.setSelection(0);
-        // Ne pas effacer name, phone, matricule car ils sont en cache
+
     }
 
     private void clearImageViews() {
         containerImages.removeAllViews();
         mViewModel.clearImages();
-        addImageView(); // Ajouter un nouveau slot vide
+        addImageView();
     }
 }

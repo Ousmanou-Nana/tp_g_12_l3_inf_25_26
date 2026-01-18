@@ -25,6 +25,7 @@ import java.util.Locale;
 public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     private static final String PREFS_NAME = "UserPrefs";
+    private static final String KEY_USER_ID = "userId";
     private static final String KEY_USER_NAME = "userName";
     private static final String KEY_USER_PHONE = "userPhone";
     private static final String KEY_USER_MATRICULE = "userMatricule";
@@ -41,25 +42,28 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         databaseHelper = new DatabaseHelper(application);
         sharedPreferences = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        // Load user info immediately (synchronously) in constructor
-        String name = sharedPreferences.getString(KEY_USER_NAME, "");
-        String phone = sharedPreferences.getString(KEY_USER_PHONE, "");
-        String matricule = sharedPreferences.getString(KEY_USER_MATRICULE, "");
-        UserInfo userInfo = new UserInfo(name, phone, matricule);
-        userInfoLiveData.setValue(userInfo);
+        // Load user info immediately from SharedPreferences
+        loadUserInfoFromCache();
     }
 
     // ==================== CACHE OPERATIONS ====================
 
+    /**
+     * Load user information from SharedPreferences cache
+     */
     private void loadUserInfoFromCache() {
         String name = sharedPreferences.getString(KEY_USER_NAME, "");
         String phone = sharedPreferences.getString(KEY_USER_PHONE, "");
         String matricule = sharedPreferences.getString(KEY_USER_MATRICULE, "");
 
         UserInfo userInfo = new UserInfo(name, phone, matricule);
-        userInfoLiveData.postValue(userInfo);
+        userInfoLiveData.setValue(userInfo);
     }
 
+    /**
+     * Save user information to SharedPreferences cache
+     * This is called when a declaration is submitted to remember user data
+     */
     public void saveUserInfoToCache(String name, String phone, String matricule) {
         sharedPreferences.edit()
                 .putString(KEY_USER_NAME, name)
@@ -71,6 +75,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         userInfoLiveData.setValue(userInfo);
     }
 
+    /**
+     * Clear user cache - removes saved user information
+     */
     public void clearUserCache() {
         sharedPreferences.edit()
                 .remove(KEY_USER_NAME)
@@ -97,6 +104,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== IMAGE OPERATIONS ====================
 
+    /**
+     * Add an image URI to the selected images list
+     */
     public void addImage(Uri uri) {
         List<Uri> current = selectedImagesLiveData.getValue();
         if (current != null) {
@@ -105,6 +115,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
+    /**
+     * Remove an image from the selected images list
+     */
     public void removeImage(int position) {
         List<Uri> current = selectedImagesLiveData.getValue();
         if (current != null && position >= 0 && position < current.size()) {
@@ -113,13 +126,21 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
+    /**
+     * Clear all selected images
+     */
     public void clearImages() {
-        selectedImagesLiveData.setValue(new ArrayList<>());
+        selectedImagesLiveData.postValue(new ArrayList<>());
     }
+
 
     // ==================== VALIDATION ====================
 
-    public boolean isFormValid(String name, String phone, String matricule, String description, String type) {
+    /**
+     * Validate form fields before submission
+     */
+    public boolean isFormValid(String name, String phone, String matricule,
+                               String description, String type) {
         boolean hasImages = selectedImagesLiveData.getValue() != null
                 && !selectedImagesLiveData.getValue().isEmpty();
 
@@ -129,6 +150,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== TYPES D'OBJETS ====================
 
+    /**
+     * Get all object types from database
+     */
     public String[] getObjectTypes() {
         List<String> typesList = new ArrayList<>();
         Cursor cursor = databaseHelper.getAllTypes();
@@ -149,37 +173,42 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
     // ==================== SUBMIT DECLARATION ====================
 
     /**
-     * Soumet la déclaration à la base de données
-     * Utilise maintenant la table DECLARATION au lieu de OBJET
+     * Submit the declaration to the database
+     * Uses the DECLARATION table instead of OBJET
      */
     public void submitDeclaration(String name, String phone, String matricule,
                                   String description, String type) {
 
+        // Save user info to cache for future use
         saveUserInfoToCache(name, phone, matricule);
 
         new Thread(() -> {
             try {
-                // 1. Vérifier si l'utilisateur existe déjà
+                // 1. Get or create user ID
                 int userId = getUserIdOrCreate(name, phone, matricule);
                 if (userId == -1) {
-                    submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de la création de l'utilisateur"));
+                    submitResultLiveData.postValue(
+                            new SubmitResult(false, "Erreur lors de la création de l'utilisateur")
+                    );
                     return;
                 }
 
-                // 2. Récupérer l'ID du type d'objet
+                // 2. Get type ID from type name
                 int typeId = databaseHelper.getTypeIdByName(type);
                 if (typeId == -1) {
-                    submitResultLiveData.postValue(new SubmitResult(false, "Type d'objet invalide"));
+                    submitResultLiveData.postValue(
+                            new SubmitResult(false, "Type d'objet invalide")
+                    );
                     return;
                 }
 
-                // 3. Date actuelle
+                // 3. Get current date and time
                 String currentDate = new SimpleDateFormat(
                         "yyyy-MM-dd HH:mm:ss",
                         Locale.getDefault()
                 ).format(new Date());
 
-                // 4. Insérer la déclaration dans la table DECLARATION
+                // 4. Insert declaration into DECLARATION table
                 long declarationId = databaseHelper.insertDeclaration(
                         userId,
                         description,
@@ -188,46 +217,56 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
                 );
 
                 if (declarationId == -1) {
-                    submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de l'enregistrement de la déclaration"));
+                    submitResultLiveData.postValue(
+                            new SubmitResult(false, "Erreur lors de l'enregistrement de la déclaration")
+                    );
                     return;
                 }
 
-                // 5. Sauvegarder les images
+                // 5. Save images to internal storage and database
                 List<Uri> images = selectedImagesLiveData.getValue();
                 if (images != null && !images.isEmpty()) {
                     boolean allImagesSaved = saveImagesFromUri((int) declarationId, images);
                     if (!allImagesSaved) {
-                        submitResultLiveData.postValue(new SubmitResult(false, "Erreur lors de la sauvegarde des images"));
+                        submitResultLiveData.postValue(
+                                new SubmitResult(false, "Erreur lors de la sauvegarde des images")
+                        );
                         return;
                     }
                 }
 
-                // 6. Effacer les images après soumission réussie
+                // 6. Clear images after successful submission
                 clearImages();
 
-                submitResultLiveData.postValue(new SubmitResult(true, "Déclaration envoyée avec succès"));
+
+                submitResultLiveData.postValue(
+                        new SubmitResult(true, "Déclaration envoyée avec succès")
+                );
 
             } catch (Exception e) {
                 e.printStackTrace();
-                submitResultLiveData.postValue(new SubmitResult(false, "Erreur: " + e.getMessage()));
+                submitResultLiveData.postValue(
+                        new SubmitResult(false, "Erreur: " + e.getMessage() )
+                );
             }
         }).start();
     }
 
     /**
-     * Récupère l'ID de l'utilisateur ou le crée s'il n'existe pas
+     * Get user ID by matricule or create a new user if doesn't exist
      */
     private int getUserIdOrCreate(String name, String phone, String matricule) {
-        // Vérifier si l'utilisateur existe déjà par matricule
+        // Check if user exists by matricule
         Cursor cursor = databaseHelper.getUserByMatricule(matricule);
 
         if (cursor != null && cursor.moveToFirst()) {
             int idIndex = cursor.getColumnIndex("id_user");
             int userId = -1;
+
             if (idIndex != -1) {
                 userId = cursor.getInt(idIndex);
 
-                // Mettre à jour les infos si elles ont changé
+                // Update user info if it has changed
                 int nameIndex = cursor.getColumnIndex("name");
                 int phoneIndex = cursor.getColumnIndex("phone");
 
@@ -248,15 +287,16 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
             cursor.close();
         }
 
-        // L'utilisateur n'existe pas, le créer
+        // User doesn't exist, create new user
         long newUserId = databaseHelper.insertUser(name, phone, matricule);
         return (int) newUserId;
     }
 
     /**
-     * Sauvegarde les images depuis les URI pour une déclaration
+     * Save images from URIs to internal storage and database
      */
     private boolean saveImagesFromUri(int declarationId, List<Uri> imageUris) {
+        // Create images directory in internal storage
         File imageDir = new File(getApplication().getFilesDir(), "images");
         if (!imageDir.exists()) {
             imageDir.mkdirs();
@@ -268,19 +308,24 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
                 String fileName = "user_declaration_" + declarationId + "_img_" + i + ".jpg";
                 File imageFile = new File(imageDir, fileName);
 
-                // Copier le contenu de l'URI vers le fichier
-                InputStream inputStream = getApplication().getContentResolver().openInputStream(uri);
+                // Copy content from URI to file
+                InputStream inputStream = getApplication()
+                        .getContentResolver()
+                        .openInputStream(uri);
+
                 if (inputStream != null) {
                     FileOutputStream outputStream = new FileOutputStream(imageFile);
                     byte[] buffer = new byte[1024];
                     int length;
+
                     while ((length = inputStream.read(buffer)) > 0) {
                         outputStream.write(buffer, 0, length);
                     }
+
                     outputStream.close();
                     inputStream.close();
 
-                    // Enregistrer le chemin dans la base de données (pour DECLARATION)
+                    // Save image path to database for DECLARATION
                     boolean inserted = databaseHelper.insertImageForDeclaration(
                             declarationId,
                             imageFile.getAbsolutePath()
@@ -304,6 +349,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
 
     // ==================== INNER CLASSES ====================
 
+    /**
+     * User information holder class
+     */
     public static class UserInfo {
         private final String name;
         private final String phone;
@@ -332,6 +380,9 @@ public class UserDeclareObjectFromViewModel extends AndroidViewModel {
         }
     }
 
+    /**
+     * Submission result holder class
+     */
     public static class SubmitResult {
         private final boolean success;
         private final String message;
