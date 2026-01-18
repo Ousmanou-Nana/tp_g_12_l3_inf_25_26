@@ -56,7 +56,8 @@ public class LogingViewModel extends AndroidViewModel {
                             "Connexion réussie",
                             userId,
                             dbName,
-                            dbMatricule
+                            dbMatricule,
+                            dbPhone
                     ));
                 } else {
                     loginResult.setValue(new LoginResult(
@@ -90,7 +91,8 @@ public class LogingViewModel extends AndroidViewModel {
                                 "Compte créé et connecté avec succès",
                                 userId,
                                 name.trim(),
-                                matricule.trim()
+                                matricule.trim(),
+                                phone.trim()
                         ));
                     } else {
                         newUserCursor.close();

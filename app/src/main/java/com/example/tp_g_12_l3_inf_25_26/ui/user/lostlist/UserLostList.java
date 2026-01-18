@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.declareobjectfrom.UserDeclareObjectFrom;
-import com.example.tp_g_12_l3_inf_25_26.ui.user.vmageverification.ImageVerificationFragment;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.mydeclaration.MyDeclaration;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
@@ -75,15 +74,6 @@ public class UserLostList extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerLostObjects);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Initialise l'adapter du tableau avec les colonnes et une liste vide
-        adapter = new TableAdapter<>(
-                requireContext(),
-                viewModel.getColumns(),
-                viewModel.getRows(),
-                this::showVerificationDialog
-        );
-
-        recyclerView.setAdapter(adapter);
     }
 
     private void setupButtons() {
@@ -144,44 +134,6 @@ public class UserLostList extends Fragment {
         });
     }
 
-    // Affiche une boîte de dialogue pour vérifier si l'objet appartient à l'utilisateur
-    private void showVerificationDialog(TableRow row) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Vérification de l'objet")
-                .setMessage("Confirmez-vous que cet objet vous appartient ?")
-                .setPositiveButton("Oui", (d, w) -> openImageVerification(row))
-                .setNegativeButton("Non", null)
-                .show();
-    }
 
-    // Ouvre le fragment de vérification par image
-    private void openImageVerification(TableRow row) {
-        // Le premier élément de la ligne est l'ID de l'objet
-        String objetId = row.cells().get(0);
 
-        getParentFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main_user_container,
-                        ImageVerificationFragment.newInstance(objetId))
-                .addToBackStack(null)
-                .commit();
-    }
-
-    // Ouvre le formulaire pour déclarer un nouvel objet perdu
-    private void openDeclareForm() {
-        getParentFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main_user_container, UserDeclareObjectFrom.newInstance())
-                .addToBackStack(null)
-                .commit();
-    }
-
-    // Ouvre la liste des déclarations de l'utilisateur
-    private void openMyDeclarations() {
-        getParentFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main_user_container, MyDeclaration.newInstance())
-                .addToBackStack(null)
-                .commit();
-    }
 }

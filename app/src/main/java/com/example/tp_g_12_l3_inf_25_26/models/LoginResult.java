@@ -7,17 +7,20 @@ public class LoginResult {
     private String userName;
     private String matricule;
 
+    private  String phone;
+
     public LoginResult(boolean success, String message) {
         this.success = success;
         this.message = message;
     }
 
-    public LoginResult(boolean success, String message, int userId, String userName, String matricule) {
+    public LoginResult(boolean success, String message, int userId, String userName, String matricule,String phone) {
         this.success = success;
         this.message = message;
         this.userId = userId;
         this.userName = userName;
         this.matricule = matricule;
+        this.phone = phone;
     }
 
     public boolean isSuccess() {
@@ -38,5 +41,9 @@ public class LoginResult {
 
     public String getMatricule() {
         return matricule;
+    }
+
+    public String getPhone() {
+        return phone;
     }
 }
