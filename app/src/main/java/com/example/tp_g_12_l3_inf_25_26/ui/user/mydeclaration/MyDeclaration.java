@@ -18,17 +18,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tp_g_12_l3_inf_25_26.R;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.lostlist.UserLostList;
 import com.example.tp_g_12_l3_inf_25_26.ui.user.declareobjectfrom.UserDeclareObjectFrom;
-import com.example.tp_g_12_l3_inf_25_26.utils.ColumnDef;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
-
-import java.util.List;
 
 public class MyDeclaration extends Fragment {
 
     private MyDeclarationViewModel viewModel;
+    private TableAdapter<TableRow> adapter;
 
-    // Crée une instance du fragment
+    // Filter buttons
+    private Button btnAll, btnPending, btnVerification, btnRecovered, btnRefresh;
+
     public static MyDeclaration newInstance() {
         return new MyDeclaration();
     }
@@ -37,7 +37,9 @@ public class MyDeclaration extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Initialise le ViewModel
-        viewModel = new ViewModelProvider(this).get(MyDeclarationViewModel.class);
+        viewModel = new ViewModelProvider(this,
+                ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication()))
+                .get(MyDeclarationViewModel.class);
     }
 
     @Override
@@ -46,7 +48,6 @@ public class MyDeclaration extends Fragment {
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState
     ) {
-        // Inflate le layout du fragment
         return inflater.inflate(R.layout.fragment_my_declaration, container, false);
     }
 
@@ -54,24 +55,38 @@ public class MyDeclaration extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialise RecyclerView
+        initViews(view);
+        setupRecyclerView(view);
+        setupActionButtons(view);
+        setupFilterButtons();
+        observeViewModel();
+    }
+
+    private void initViews(View view) {
+        // Filter buttons
+        btnAll = view.findViewById(R.id.btnAll);
+        btnPending = view.findViewById(R.id.btnPending);
+        btnVerification = view.findViewById(R.id.btnVerification);
+        btnRecovered = view.findViewById(R.id.btnRecovered);
+        btnRefresh = view.findViewById(R.id.btnRefresh);
+    }
+
+    private void setupRecyclerView(View view) {
         RecyclerView recycler = view.findViewById(R.id.recyclerMyDeclarations);
         recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Récupère colonnes et lignes depuis le ViewModel
-        List<ColumnDef> columns = viewModel.getColumns();
-        List<TableRow> rows = viewModel.getRows(); // TODO: récupérer les déclarations réelles depuis la base
-
-        TableAdapter<TableRow> adapter = new TableAdapter<>(
+        // Initialise l'adapter avec une liste vide
+        adapter = new TableAdapter<>(
                 requireContext(),
-                columns,
-                rows,
-                row -> showDeleteDialog(row)
+                viewModel.getColumns(),
+                viewModel.getRows(),
+                this::showDeleteDialog
         );
 
         recycler.setAdapter(adapter);
+    }
 
-        // Boutons pour ajouter une nouvelle déclaration ou aller à la liste des objets perdus
+    private void setupActionButtons(View view) {
         Button btnNewDeclaration = view.findViewById(R.id.buttonNewDeclaration);
         Button btnLostList = view.findViewById(R.id.buttonLostList);
 
@@ -79,18 +94,90 @@ public class MyDeclaration extends Fragment {
         btnLostList.setOnClickListener(v -> openLostList());
     }
 
+    private void setupFilterButtons() {
+        // Filter buttons
+        btnAll.setOnClickListener(v -> {
+            viewModel.filterByStatus(null); // null = toutes les déclarations
+            highlightSelectedFilter(btnAll);
+        });
+
+        btnPending.setOnClickListener(v -> {
+            viewModel.filterByStatus("En attente");
+            highlightSelectedFilter(btnPending);
+        });
+
+        btnVerification.setOnClickListener(v -> {
+            viewModel.filterByStatus("En cours de vérification");
+            highlightSelectedFilter(btnVerification);
+        });
+
+        btnRecovered.setOnClickListener(v -> {
+            viewModel.filterByStatus("Récupéré");
+            highlightSelectedFilter(btnRecovered);
+        });
+
+        btnRefresh.setOnClickListener(v -> viewModel.refresh());
+
+        // Sélectionner "Tous" par défaut
+        highlightSelectedFilter(btnAll);
+    }
+
+    private void highlightSelectedFilter(Button selectedButton) {
+        // Réinitialiser tous les boutons
+        btnAll.setEnabled(true);
+        btnPending.setEnabled(true);
+        btnVerification.setEnabled(true);
+        btnRecovered.setEnabled(true);
+
+        // Désactiver le bouton sélectionné pour indiquer qu'il est actif
+        selectedButton.setEnabled(false);
+    }
+
+    private void observeViewModel() {
+        // Observer les déclarations
+        viewModel.getDeclarationsLiveData().observe(getViewLifecycleOwner(), declarations -> {
+            if (declarations != null) {
+                adapter.updateData(declarations);
+            }
+        });
+
+        // Observer le résultat de suppression
+        viewModel.getDeleteResultLiveData().observe(getViewLifecycleOwner(), result -> {
+            if (result != null) {
+                Toast.makeText(requireContext(), result.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Recharger les données quand on revient sur le fragment
+        viewModel.refresh();
+    }
+
     // Affiche une boîte de dialogue pour confirmer la suppression d'une déclaration
     private void showDeleteDialog(TableRow row) {
+        // Le premier élément est l'ID de la déclaration
+        String declarationId = row.cells().get(0);
+        String type = row.cells().get(1);
+        String description = row.cells().get(2);
+
         new AlertDialog.Builder(requireContext())
                 .setTitle("Supprimer la déclaration")
-                .setMessage("Voulez-vous supprimer cette déclaration ?")
-                .setPositiveButton("Oui", (dialog, which) ->
-                        Toast.makeText(
-                                requireContext(),
-                                "Déclaration supprimée : " + row.cells().get(1), // TODO: remplacer par suppression réelle dans la DB
-                                Toast.LENGTH_SHORT
-                        ).show()
-                )
+                .setMessage("Voulez-vous supprimer cette déclaration ?\n\n" +
+                        "Type: " + type + "\n" +
+                        "Description: " + description)
+                .setPositiveButton("Oui", (dialog, which) -> {
+                    try {
+                        int id = Integer.parseInt(declarationId);
+                        viewModel.deleteDeclaration(id);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(requireContext(),
+                                "Erreur: ID invalide",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
                 .setNegativeButton("Non", null)
                 .show();
     }

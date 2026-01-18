@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,8 +24,11 @@ import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 public class UserLostList extends Fragment {
 
     private UserLostListViewModel viewModel;
+    private TableAdapter<TableRow> adapter;
 
-    // Crée une instance du fragment
+    // Filter buttons
+    private Button btnAll, btnPending, btnVerification, btnRecovered, btnRefresh;
+
     public static UserLostList newInstance() {
         return new UserLostList();
     }
@@ -33,7 +37,9 @@ public class UserLostList extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Initialise le ViewModel
-        viewModel = new ViewModelProvider(this).get(UserLostListViewModel.class);
+        viewModel = new ViewModelProvider(this,
+                ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication()))
+                .get(UserLostListViewModel.class);
     }
 
     @Override
@@ -42,40 +48,107 @@ public class UserLostList extends Fragment {
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState
     ) {
-        // Inflate le layout du fragment
         return inflater.inflate(R.layout.fragment_user_lost_list, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
+        initViews(view);
+        setupRecyclerView(view);
+        setupButtons();
+        observeViewModel();
+    }
+
+    private void initViews(View view) {
+        // Filter buttons
+        btnAll = view.findViewById(R.id.btnAll);
+        btnPending = view.findViewById(R.id.btnPending);
+        btnVerification = view.findViewById(R.id.btnVerification);
+        btnRecovered = view.findViewById(R.id.btnRecovered);
+        btnRefresh = view.findViewById(R.id.btnRefresh);
+    }
+
+    private void setupRecyclerView(View view) {
         // Initialise le RecyclerView avec un layout vertical
         RecyclerView recyclerView = view.findViewById(R.id.recyclerLostObjects);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Initialise l'adapter du tableau avec les colonnes et les lignes
-        TableAdapter<TableRow> adapter = new TableAdapter<>(
+        // Initialise l'adapter du tableau avec les colonnes et une liste vide
+        adapter = new TableAdapter<>(
                 requireContext(),
                 viewModel.getColumns(),
-                viewModel.getRows(),  // TODO: Remplacer ces lignes statiques par des données réelles de la base
+                viewModel.getRows(),
                 this::showVerificationDialog
         );
 
         recyclerView.setAdapter(adapter);
+    }
 
-        // Boutons pour déclarer un objet perdu ou voir ses propres déclarations
-        view.findViewById(R.id.buttonDeclareLost)
-                .setOnClickListener(v -> openDeclareForm());
+    private void setupButtons() {
+        // Action buttons (already set up in onViewCreated)
+        // No need to reference them again here
 
-        view.findViewById(R.id.buttonViewDeclarations)
-                .setOnClickListener(v -> openMyDeclarations());
+        // Filter buttons
+        btnAll.setOnClickListener(v -> {
+            viewModel.filterByStatus(null); // null = tous les objets
+            highlightSelectedFilter(btnAll);
+        });
+
+        btnPending.setOnClickListener(v -> {
+            viewModel.filterByStatus("En attente");
+            highlightSelectedFilter(btnPending);
+        });
+
+        btnVerification.setOnClickListener(v -> {
+            viewModel.filterByStatus("En cours de vérification");
+            highlightSelectedFilter(btnVerification);
+        });
+
+        btnRecovered.setOnClickListener(v -> {
+            viewModel.filterByStatus("Récupéré");
+            highlightSelectedFilter(btnRecovered);
+        });
+
+        btnRefresh.setOnClickListener(v -> viewModel.refresh());
+
+        // Sélectionner "En attente" par défaut
+        highlightSelectedFilter(btnPending);
+    }
+
+    private void highlightSelectedFilter(Button selectedButton) {
+        // Réinitialiser tous les boutons
+        btnAll.setEnabled(true);
+        btnPending.setEnabled(true);
+        btnVerification.setEnabled(true);
+        btnRecovered.setEnabled(true);
+
+        // Désactiver le bouton sélectionné pour indiquer qu'il est actif
+        selectedButton.setEnabled(false);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Recharger les données quand on revient sur le fragment
+        viewModel.refresh();
+    }
+
+    private void observeViewModel() {
+        // Observer les objets perdus
+        viewModel.getObjectsLiveData().observe(getViewLifecycleOwner(), objects -> {
+            if (objects != null) {
+                adapter.updateData(objects);
+            }
+        });
     }
 
     // Affiche une boîte de dialogue pour vérifier si l'objet appartient à l'utilisateur
     private void showVerificationDialog(TableRow row) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Vérification de l’objet")
-                .setMessage("Confirmez-vous que cet objet vous appartient")
+                .setTitle("Vérification de l'objet")
+                .setMessage("Confirmez-vous que cet objet vous appartient ?")
                 .setPositiveButton("Oui", (d, w) -> openImageVerification(row))
                 .setNegativeButton("Non", null)
                 .show();
@@ -83,10 +156,13 @@ public class UserLostList extends Fragment {
 
     // Ouvre le fragment de vérification par image
     private void openImageVerification(TableRow row) {
+        // Le premier élément de la ligne est l'ID de l'objet
+        String objetId = row.cells().get(0);
+
         getParentFragmentManager()
                 .beginTransaction()
                 .replace(R.id.main_user_container,
-                        ImageVerificationFragment.newInstance(row.cells().get(0)))  // TODO: passer l'ID correct ou récupérer l'objet depuis la DB
+                        ImageVerificationFragment.newInstance(objetId))
                 .addToBackStack(null)
                 .commit();
     }
