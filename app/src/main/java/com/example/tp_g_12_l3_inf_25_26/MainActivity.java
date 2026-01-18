@@ -6,11 +6,17 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.tp_g_12_l3_inf_25_26.DB.DatabaseSeeder;
+
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        DatabaseSeeder seeder = new DatabaseSeeder(this);
+        seeder.seedDatabase();
+        seeder.printDatabaseStats();
 
         Button adminButton = findViewById(R.id.buttonAdmin);
         Button userButton = findViewById(R.id.buttonUser);

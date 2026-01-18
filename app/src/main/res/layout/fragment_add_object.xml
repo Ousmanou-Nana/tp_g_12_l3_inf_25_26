@@ -1,112 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    tools:context=".ui.admin.addobject.AddObjectFragment">
+    android:fillViewport="true"
+    android:background="#F5F5F5">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Déclarer un objet trouvé"
+            android:text="Ajouter un Objet Trouvé"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"
-            android:textColor="@android:color/black"/>
+            android:textColor="#333333"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
 
-        <!-- Nom du déclarant -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            android:hint="Nom du déclarant">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Nom du déclarant"
                 android:inputType="textPersonName"
-                android:maxLines="1"/>
-
+                android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Téléphone -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            android:hint="Téléphone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Numéro de téléphone"
                 android:inputType="phone"
-                android:maxLines="1"/>
-
+                android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Type d'objet -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Type d'objet"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp"/>
-
-        <Spinner
-            android:id="@+id/spinnerObjectType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:minHeight="48dp"/>
-
-        <!-- Description -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            android:hint="Type d'objet">
+
+            <Spinner
+                android:id="@+id/spinnerObjectType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Description">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Description de l'objet"
                 android:inputType="textMultiLine"
-                android:minLines="3"
-                android:maxLines="5"
-                android:gravity="top"/>
-
+                android:minLines="4"
+                android:gravity="top"
+                android:padding="16dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Compteur d'images -->
         <TextView
             android:id="@+id/textImageCount"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Images: 0/5"
-            android:textSize="14sp"
-            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#666666"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Bouton prendre photo -->
         <Button
             android:id="@+id/buttonTakePhoto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Prendre une photo"
+            android:text="Prendre une Photo"
+            android:textStyle="bold"
+            android:backgroundTint="#2196F3"
+            android:textColor="#FFFFFF"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Conteneur des images -->
         <LinearLayout
             android:id="@+id/imagesContainer"
             android:layout_width="match_parent"
@@ -114,31 +104,24 @@
             android:orientation="vertical"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Boutons d'action -->
-        <LinearLayout
+        <Button
+            android:id="@+id/buttonSubmit"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Enregistrer l'Objet"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/buttonClear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/buttonClear"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Effacer"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <Button
-                android:id="@+id/buttonSubmit"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Enregistrer"
-                android:layout_marginStart="8dp"/>
-
-        </LinearLayout>
+            android:text="Réinitialiser"
+            android:backgroundTint="#FF5722"
+            android:textColor="#FFFFFF"/>
 
     </LinearLayout>
 

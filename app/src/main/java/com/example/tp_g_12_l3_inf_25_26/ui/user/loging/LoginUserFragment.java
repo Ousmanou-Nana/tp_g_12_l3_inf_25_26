@@ -79,11 +79,11 @@ public class LoginUserFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_login_user, container, false);
 
         // Initialiser les vues
-        etUsername = view.findViewById(R.id.et_user_username);
-        etPhone = view.findViewById(R.id.et_user_phone);
-        etMatricule = view.findViewById(R.id.et_user_matricule);
-        btnLogin = view.findViewById(R.id.btn_login);
-        progressBar = view.findViewById(R.id.progress_bar);
+        etUsername = view.findViewById(R.id.editName);
+        etPhone = view.findViewById(R.id.editPhone);
+        etMatricule = view.findViewById(R.id.editMatricule);
+        btnLogin = view.findViewById(R.id.buttonLogin);
+        progressBar = view.findViewById(R.id.progressBar);
 
         // Configurer le bouton de connexion
         btnLogin.setOnClickListener(v -> handleLogin());
