@@ -1,12 +1,12 @@
 package com.example.tp_g_12_l3_inf_25_26.ui.user.lostlist;
 
-import android.app.AlertDialog;
+
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,14 +16,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tp_g_12_l3_inf_25_26.R;
-import com.example.tp_g_12_l3_inf_25_26.ui.user.declareobjectfrom.UserDeclareObjectFrom;
-import com.example.tp_g_12_l3_inf_25_26.ui.user.mydeclaration.MyDeclaration;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableAdapter;
 import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
 
 /**
  * Fragment affichant la liste des objets perdus avec système de filtrage.
- *
+
  * CORRECTION: Initialisation de l'adapter dans setupRecyclerView()
  * pour éviter NullPointerException dans l'observateur.
  */

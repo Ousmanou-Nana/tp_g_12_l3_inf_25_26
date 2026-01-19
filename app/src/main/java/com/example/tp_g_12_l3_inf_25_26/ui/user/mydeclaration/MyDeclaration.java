@@ -42,7 +42,7 @@ import com.example.tp_g_12_l3_inf_25_26.utils.TableRow;
  * - RecyclerView avec TableAdapter personnalisé
  * - LiveData pour mises à jour réactives
  * - AlertDialog pour confirmations de suppression
- *
+
  * Navigation:
  * - Vers UserDeclareObjectFrom (nouvelle déclaration)
  * - Vers UserLostList (liste complète des objets perdus)

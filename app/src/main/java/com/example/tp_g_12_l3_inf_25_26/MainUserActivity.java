@@ -2,7 +2,6 @@ package com.example.tp_g_12_l3_inf_25_26;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
